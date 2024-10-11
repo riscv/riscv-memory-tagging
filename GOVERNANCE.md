@@ -1,8 +1,9 @@
 # Governance
-This project for the template specification is governed by the Documentation SIG.
 
-The group can be joined by RISC-V members at: https://lists.riscv.org/g/sig-documentation.
+This project is governed by the Security HC and Priv IC
 
-Mailing list archives are available at: https://lists.riscv.org/g/sig-documentation/topics.
+The group can be joined by RISC-V members at:
+    https://lists.riscv.org/g/tech-memory-tagging
 
-**_NOTE:_** PROJECTS BUILT USING THE TEMPLATE SHOULD UPDATE THE ABOVE TEXT AS-NEEDED.
+Mailing list archives are available at:
+    https://lists.riscv.org/g/tech-memory-tagging
