@@ -1,10 +1,8 @@
-= RISC-V Example Specification Document (Zexmpl)
-Authors: Author 1, Author 2
-:docgroup: RISC-V Task Group
-:description: RISC-V Example Specification Document (Zexmpl)
+= RISC-V Memory Tagging Extension
+:description: RISC-V Memory Tagging Task Group
 :company: RISC-V.org
-:revdate: 1/2023
-:revnumber: 1.0
+:revdate: 10/2024
+:revnumber: 0.1
 :revremark: This document is under development. Expect potential changes. Visit http://riscv.org/spec-state for further details.
 :revinfo:
 :url-riscv: http://riscv.org
@@ -18,12 +16,11 @@ Authors: Author 1, Author 2
 // Settings:
 :experimental:
 :reproducible:
-//:WaveDromEditorApp: app/wavedrom-editor.app
-:imagesoutdir: images
-//:srcdir: src
-:bibtex-file: src/example.bib
-:bibtex-order: alphabetical
-:bibtex-style: apa
+:imagesoutdir: build/images
+:srcdir: src
+:bibtex-file: {srcdir}/mte.bib
+:bibtex-order: occurence
+:bibtex-style: ieee
 :icons: font
 :lang: en
 :listing-caption: Listing
@@ -71,9 +68,9 @@ Copyright 2024 by RISC-V International.
 
 [preface]
 include::contributors.adoc[]
-
-include::intro.adoc[]
-include::chapter2.adoc[]
+include::mte_intro.adoc[]
+include::mte_tag.adoc[]
+include::mte_vatag.adoc[]
 
 // The index must precede the bibliography
 include::index.adoc[]
