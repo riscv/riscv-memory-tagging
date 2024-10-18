@@ -1,0 +1,405 @@
+[[tagging]]
+== Memory tagging extension (Zimte)
+
+The Zimte extension divides address space of the program in equal memory chunks
+of 16 bytes (hereafter `mc`). Each `mc` in address space can be associated with
+a tag (hereafter `mc_tag`) by software and `mc_tag` for `mc` is stored in
+memory defined by extension Svatag (see <<virtualtag>>).
+
+Software (runtime memory allocator or compiler) that constructs pointers to
+access memory (and thus memory chunks) is expected to place a tag (hereafter
+`pointer_tag`) in high unused bits of the pointer as defined by the pointer
+masking extensions cite:[PMASKING]. Thus `Zimte` depends on the pointer masking
+extension and is applicable to only for XLEN=64. Pointer masking has to be
+enabled as a requirement for memory tagging to be enabled in the execution
+environment.
+
+To maintain binary compatibility with implementations where memory tagging
+extension may not be implemented or may not be enabled for a workload,
+instruction encodings for memory tagging are taken from zimop cite:[ZIMOP]
+encoding and thus make memory tagging extension dependent on zimop.
+
+=== Tag widths
+
+Width of the `pointer_tag` (hereafter `pointer_tag_width`) can be 4 bit or 7
+bit wide depending on implementation. Discovery of `pointer_tag_width` is
+described in <<MEMTAG_CSR_CTRL>> section. Width of the `mc_tag` (hereafter
+`mc_tag_width`) is dependent on the `pointer_tag_width`. Following table
+describes valid configurations of `pointer_tag_width` and `mc_tag_width`.
+
+.`pointer_tag` and `mc_tag` valid configurations
+[width=100%]
+[%header, cols="^4,^4"]
+|===
+|`pointer_tag_width`| `mc_tag_width`
+|  4                | 4
+|  7                | 8
+|===
+
+=== Tag placement in pointer
+
+Zimte defines following instructions to annotate a pointer with `pointer_tag`
+and perform arithmetics on `pointer_tag` in a tagged pointer. Placement and
+arithmetics on `pointer_tag` are performed in-place in masked bits (as defined
+by pointer masking extension) starting at b63. Instructions introduced to
+place and perform arithmetics on `pointer_tag` are encoded using `MOP.RR.1`
+from zimop extension.
+
+[NOTE]
+====
+Existing RISC-V instructions can also be used to place (and do arithmetics)
+`pointer_tag` in masked bits of a pointer. But doing so increases code size,
+more so if tagging for stack memory is enabled. And new instructions help
+contain the code size growth.
+====
+
+Following are the instructions to place `pointer_tag` in the source register
+
+==== Generate a tag - gentag rs1
+
+If memory tagging is enabled in the current execution environment (see
+<<MEM_TAG_EN>>), hart randomly generates a `pointer_tag` value, clears
+`rs1[b63:pointer_tag_width]` bits in `rs1` and performs an OR operation with
+`rs1[b63:pointer_tag_width]` and places the result back in `rs1`.
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['pointer']},
+  {bits:  4, name: 'tag_imm4', attr:['0000']},
+  {bits:  1, name: '0', attr:['0']},
+  {bits:  7, name: '1000011', attr:['gentag']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+==== Arithmetics on tag - addtag rs1
+
+`addtag rs1` is pseudo for `gentag rs1` with `tag_imm4 != 0`. If memory tagging
+is enabled in the current execution environment (see <<MEM_TAG_EN>>), hart
+performs an add of `tag_imm4` to `pointer_tag` bits
+(`rs1[b63:pointer_tag_width]`) in `rs1` by adding  and place the result back in
+`rs1[b63:pointer_tag_width]`.
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['tagged_pointer']},
+  {bits:  4, name: 'tag_imm4', attr:['non-zero']},
+  {bits:  1, name: '0', attr:['0']},
+  {bits:  7, name: '1000011', attr:['addtag']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+[NOTE]
+=====
+addtag instruction can be used by the compiler for generating distinct pointer
+tags derived from a base tag (base tag obtained via gentag). Compiler can use
+this mechanism to assign different tags (with same base tag) for consecutive
+objects on stack and mitigate adjacent overflow bugs. This also helps with
+language runtime during events like exception unwind to calculate tags for
+objects on stack in a deterministic manner.
+=====
+
+[[TAG_STORE]]
+=== set tag(s) for memory chunk(s)
+
+Zimte defines an instruction to store tag (i.e. `pointer_tag`) value(s) for
+consecutive 1 to 16 memory chunk(s). Base address of the first memory chunk is
+calculated by doing `rs1 & (~0xF)`. Count of memory chunk is encoded as 4 bit
+immediate (#chunk_count) in the instruction. This instruction is encoded using
+`MOP.RR.0` from zimop extension. Immediate encodings in #chunk_count are zero
+based and thus #chunk_count = 0 means first chunk and #chunk_count = 15 means
+16th chunk.
+
+[NOTE]
+====
+Load tag operation is omitted from extension definition because its not
+needed. Situations where load tag is required deemed to be not performance
+critical paths. Furthermore, if software desires to read tag in these non-
+performance critical paths, it can do so by creating an alternate read-only
+mapping of tag storage with the help of supervisor software.
+
+Since extension is still in development phase, if load tag operation is
+required by software, it can be added.
+====
+
+==== Store tag(s) for memory chunk(s): settag rs1, #chunk_count
+
+If memory tagging is enabled in the current execution environment (see
+<<MEM_TAG_EN>>), `settag` instruction creates a `mc_tag` =
+`rs1[b63:pointer_tag_width]` and stores `mc_tag(s)` for consecutive memory
+chunks encoded by `chunk_count` starting with the first memory chunk calculated
+from virtual address specified in `rs1`.
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['tagged_pointer']},
+  {bits:  4, name: 'imm4', attr:['chunk_count']},
+  {bits:  1, name: '0', attr:['0']},
+  {bits:  7, name: '1000001', attr:['settag']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+==== Set a memory chunk in accessible: setinvtag rs1, #chunk_count
+
+A memory chunk is inaccessible, if `mc_tag` for memory chunk is set to invalid
+tag value. If memory tagging is enabled in the current execution environment
+(see <<MEM_TAG_EN>>), `setinvtag` instruction creates `mc_tag` = `invalid_tag`
+and stores `mc_tag(s)` for consecutive memory chunks encoded by `chunk_count`
+starting with the first memory chunk calculated from virtual address specified
+in `rs1`. A load/store to a memory chunk must raise a software check exception
+(see <<TAG_CHECKS>>) if `mc_tag` for that memory chunk is set to
+`invalid_tag` value. Encoding of `invalid_tag` differ based on `mc_tag_width`.
+Following table describes `invalid_tag` encodings for different configurations.
+
+.`invalid_tag` encodings
+[width=100%]
+[%header, cols="^4,^12"]
+|===
+|`mc_tag_width`| `invalid_tag` encoding
+|  4           | `0b1111`
+|  8           | `0b1xxxxxxx`
+|===
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['pointer']},
+  {bits:  4, name: 'imm4', attr:['chunk_count']},
+  {bits:  1, name: '1', attr:['1']},
+  {bits:  7, name: '1000001', attr:['setinvtag']},
+], config:{lanes: 1, hspace:1024}}
+....
+
+[NOTE]
+=====
+An invalid tag awareness in hart allows software to implement quarantine of
+memory more reliably and efficiently without reserving a tag. This also helps
+software to create redzones and smaller than page size guard gaps efficiently
+between memory objects.
+=====
+
+[NOTE]
+====
+.Note on tag stores
+When `pointer_tag_width = 4 bit`, `mc_tag` (stored) width is 4 bit and thus
+maximum width of tag store operation can be 64 bit wide (each memory chunk
+needs 4 bit tag and maximum possible chunks are 16. 4x16 = 64 bit). When
+`pointer_tag_width = 7 bit`, `mc_tag` (stored) width is 8 bit and thus maximum
+width of tag store operation can be 128 bit wide (each memory chunk needs 8 bit
+and maximum possible chunks are 16. 8x16 = 128 bit).
+====
+
+`settag` and `setinvtag` are read, modify and then write operation on the
+memory region defined by Svatag extension and there are no atomicity
+requirements on the implementation. If atomicity is desired then it is
+software's responsibility.
+
+`settag` and `setinvtag` can generate store operations larger than maximum
+store width supported by implementation and implementation may choose to split
+it into multiple stores with no ordering requirements or dependencies among
+splitted stores.
+
+* Memory ordering requirement
+
+  A memory access (load or store) to some virtual address `va` can not bypass
+  the older store initiated by `settag/setinvtag rs1=va`.
+
+* Exceptions
+
+  `settag/setinvtag` can raise store page fault or access fault depending on
+  how tag storage is oragnized. If implementation doesn't support misaligned
+  accesses, `settag/setinvtag` instruction can raise misaligned exception if
+  calculated address for locating tag is unaligned.
+
+[[TAG_CHECKS]]
+=== tag checks
+If memory tagging is enabled in the current execution environment (see
+<<MEM_TAG_EN>>) and page is marked as tagged page (see <<TAGGED_PAGE>>) in the
+first stage page table, all regular loads and stores to memory chunks (`mc`)
+in that page are subject to following checks
+
+* If `mc_tag` corresponding to `mc` is invalid, hart raises a software check
+  exception with tval = 4
+
+* If `mc_tag` is valid, hart evaluates expression `mc_tag == pointer_tag` and
+  if false then hart raises a software check exception with tval = 4.
+
+If a load / store is subject to tag checks, fetching `mc_tag` from the tag
+memory region holding tags may also result in a load page fault or load access
+fault and thus the hart report the virtual address of the tag in `xtval`.
+
+[[ASYNC_SW_CHECK]]
+=== Asynchronous reporting for tag mismatches
+
+To improve performance, software check exceptions due to tag mismatches on
+stores can be reported asynchronously. This means that reported `epc` might not
+be the reason for tag mismatch and software must do additional analysis to
+infer which store resulted in software check exception. This behavior is can
+be optionally turned on through `__x__envcfg` CSR for next less privilege mode
+(see <<MEMTAG_CSR_CTRL>>).
+
+Note that tag check violations on loads must always be reported synchronously.
+
+[[TAGGED_PAGE]]
+=== Tag checks on page basis
+
+Memory tagging extension extends first stage page table by introducing a new
+leaf PTE bit (bit position TBD) termed as `MTAG`. If an implementation
+implements memory tagging extension then `PTE.MTAG` is no more a reserved bit,
+irrespective of memory tagging is enabled or not for current execution
+environment.
+
+If memory tagging is enabled for the current execution environment (see
+<<MEM_TAG_EN>>) and PTE.MTAG = 1, then the page is considered a tagged page and
+load / stores to such a page are subject to tag checks (see <<TAG_CHECKS>>).
+
+[NOTE]
+====
+A bit in page table entry allows software to enable memory tagging on per-page
+basis and thus can have several discontigous regions on which tagging can be
+enabled. Depending on complexity of program and memory allocator(s), software
+can choose to enable on per-page basis. Furthermore, this allows software to
+enable memory tagging only for heap.
+====
+
+[[MEMTAG_CSR_CTRL]]
+=== CSR bits for memory tagging
+
+In M-mode, enable for memory tagging and subsequent behavior of Zimte
+instructions is implementation specific. Although if an implementation is not
+enabling memory tagging for M-mode, it must follow zimop behavior for Zimte
+instructions in M-mode.
+
+Enablement for privilege modes less than M-mode is controlled through
+`__x__envcfg` CSR. Zimte adds two bits termed as `MTE_MODE` to `__x__envcfg` CSR which
+controls enabling of memory tagging and `pointer_tag_width` for the next
+privilege mode. A `MT_ASYNC` bit is added to `__x__envcfg` CSR and if set,
+software check exceptions due to tag mismatches on store operations can be
+reported asynchronously (see <<ASYNC_SW_CHECK>>).
+
+[[MEM_TAG_EN]]
+==== Memory tagging enable and pointer_tag_width
+
+The term `xMTE_MODE` is used to determine if memory tagging is enabled in
+current execution environment (privilege mode).
+
+Following table describes different encodings of `MTE_MODE` and corresponding
+configuration
+
+.`MTE_MODE` encoding and its meaning
+[width=100%]
+[%header, cols="^4,^12"]
+|===
+|`MTE_MODE` | Memory tagging state
+|  00       | Disabled
+|  01       | Reserved
+|  10       | Enabled, pointer_tag_width = 4
+|  11       | Enabled, pointer_tag_width = 7
+|===
+
+  If memory tagging is implemented, implementation must implement
+  `pointer_tag_width = 4` at minimum. To discover maximum supported
+  `pointer_tag_width`, software can write `0b11` to `MTE_MODE` field in the
+  `__x__envcfg` CSR and read it back. If read back value is `0b11` then
+  implementation supports both `pointer_tag` widths.
+
+  If xMTE_MODE == 0b00 then xMTE_MODE.MT_ASYNC becomes WPRI
+
+==== Machine Environment Configuration Register (`menvcfg`)
+
+.Machine environment configuration register (`menvcfg`)
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'FIOM'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  1, name: 'SSE'},
+  {bits:  2, name: 'CBIE'},
+  {bits:  1, name: 'CBCFE'},
+  {bits:  1, name: 'CBZE'},
+  {bits:  2, name: 'MTE_MODE'},
+  {bits:  1, name: 'MT_ASYNC'},
+  {bits: 50, name: 'WPRI'},
+  {bits:  1, name: 'ADUE'},
+  {bits:  1, name: 'PBMTE'},
+  {bits:  1, name: 'STCE'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+The Zimte extension adds the `MTE_MODE` field (bit 8:2) to `menvcfg`. When the
+`MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
+HS/S-mode.
+
+When `MTE_MODE` is `0b00`, the following rules apply to HS/S-mode:
+
+* Zimte instructions will revert to their behavior as defined by Zimop.
+
+==== Supervisor Environment Configuration Register (`senvcfg`)
+
+.Supervisor environment configuration register (`senvcfg`)
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'FIOM'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  1, name: 'SSE'},
+  {bits:  2, name: 'CBIE'},
+  {bits:  1, name: 'CBCFE'},
+  {bits:  1, name: 'CBZE'},
+  {bits:  1, name: 'MTE_MODE'},
+  {bits: 55, name: 'WPRI'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+The Zimte extension adds the `MTE_MODE` field (bit 8:2) to `senvcfg`. When the
+`MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
+VU/U-mode.
+
+When `MTE_MODE` is `0b00`, the following rules apply to VU/U-mode:
+
+* Zimte instructions will revert to their behavior as defined by Zimop.
+
+==== Hypervisor Environment Configuration Register (`henvcfg`)
+
+.Hypervisor environment configuration register (`henvcfg`)
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'FIOM'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  1, name: 'SSE'},
+  {bits:  2, name: 'CBIE'},
+  {bits:  1, name: 'CBCFE'},
+  {bits:  1, name: 'CBZE'},
+  {bits:  2, name: 'MTE_MODE'},
+  {bits:  1, name: 'MT_ASYNC'},
+  {bits: 50, name: 'WPRI'},
+  {bits:  1, name: 'ADUE'},
+  {bits:  1, name: 'PBMTE'},
+  {bits:  1, name: 'STCE'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+The Zimte extension adds the `MTE_MODE` field (bit 8:2) to `henvcfg`. When the
+`MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
+VS-mode.
+
+When `MTE_MODE` is `0b00`, the following rules apply to VS-mode:
+
+* Zimte instructions will revert to their behavior as defined by Zimop.
+
+<<<
