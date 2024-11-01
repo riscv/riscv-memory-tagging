@@ -1,0 +1,82 @@
+[[virtualtag]]
+== Virtually indexed tag storage (Svatag)
+
+Svatag extension defines that tag storage for memory chunks (`mc`) as defined
+by Zimte (see <<tagging>>) extension is in virtual address
+space of execution environment. Tag storage can be viewed as a large array
+(hereafter referred to as virtually indexed tag table or VITT) of the tags
+(`mc_tag`) with each tag width = `mc_tag_width` (see
+<<tagging>> for `mc_tag` and `mc_tag_width`). Base virtual
+address of this large array is determined differently depending on privilege
+mode (see <<VIRT_TAG_BASE_CSR>>) and hereafter referred as `__x__VITT_BASE`.
+
+[[VIRT_TAG_LOOKUP]]
+=== Tag look up in virtually indexed tag table
+
+Virtual address location (`mc_tag_va`) of `mc_tag` for a given memory chunk
+located at virtual address `va` is looked up in VITT using the following
+formula
+
+  mc_tag_va = VITT_BASE + BIT_TO_BYTE((va >> 4) * mc_tag_width)
+
+When load/stores are performed on a virtual address `va` with tag checks (see
+<<TAG_CHECKS>>) enforced then hart performs tag look up by performing a load
+on `mc_tag_va` for the corresponding `va` and extracts `mc_tag` from the loaded
+value at the virtual address `mc_tag_va`.
+
+Tag loads as part of tag look up can raise load page fault on `mc_tag_va`, if
+it doesn't have read permissions in page tables.
+
+[NOTE]
+====
+In case of `mc_tag_width` = 4 bit, each single byte in tag storage is packed
+with two `mc_tag` for two consecutive memory chunks. Thus extracting a `mc_tag`
+requires masking and shifting of bits after the value is loaded from
+`mc_tag_va`.
+====
+
+When `settag` or `setinvtag` instructions are executed for memory chunks(s)
+starting at the virtual address `va` (see <<TAG_STORE>>) and memory tagging is
+enabled for current execution environment, then hart performs tag store by
+performing a store on `mc_tag_va` for the corresponding `va`.
+
+Tag stores as part of `settag/setinvtag` can raise store page fault on
+`mc_tag_va` address, if it doesn't have write permissions in page tables.
+
+[NOTE]
+====
+In case of `mc_tag_width` = 4 bit, each single byte in tag storage is packed
+with two `mc_tag` for two consecutive memory chunks. Thus storing a `mc_tag`
+requires read, modify (masking and shifting of bits) and store back to
+`mc_tag_va`.
+====
+
+[[VIRT_TAG_BASE_CSR]]
+=== Tag table base address CSRs
+
+Tag storage base address (`__x__VITT_BASE`) for M-mode can be be implementation
+specific. VITT base virtual address for privilege mode less than M-mode is
+defined using privileged CSRs. Tag table base address must be 4K aligned.
+Following table list the privileged CSRs.
+
+.Privileged tag base address CSRs
+[width=100%]
+[%header, cols="^4,^12"]
+|===
+|Privilege level | CSR
+|  U             | `svittu`
+|  S / HS        | `svitts`
+|  VS            | `vsvitts`
+|  M             | `Impl. defined`
+|===
+
+[[TAG_MEM_PROTECTION]]
+=== Protection of tag storage
+
+Hart must raise access faults on regular loads and stores to virtual addresses
+spanning VITT range. VITT range is defined as below
+
+  tag_memory_region_start = mc_tag_va(LOWEST_VADDR_CURR_PRIV)
+  tag_memory_region_end = mc_tag_va(HIGHEST_VADDR_CURR_PRIV)
+  LOWEST_VADDR_CURR_PRIV: Lowest virtual address in current privilege.
+  HIGHEST_VADDR_CURR_PRIV: Highest virtual address in current privilege.

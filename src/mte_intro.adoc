@@ -1,0 +1,82 @@
+[[intro]]
+== Introduction
+
+Significant production deployed software is written in languages which provide
+powerful primitives (like C/C++) to software developers to manage memory.
+Software is written in collaborative fashion and on tight deadlines and bugs do
+get introduced in software development. Such bugs sometimes can lead to issues
+like information disclosures, memory leak or memory corruptions commonly termed
+as `memory safety` issues. Underlying cause of memory safety issues can be
+anything but eventually such issues surface as invalid memory accesses.
+
+From program's perspective access to memory happens via pointers and life cycle
+of pointers in a program is managed by following
+
+* Memory allocator - A memory allocator uses operating system facilities to
+  create large memory mappings and expose APIs so that software can manage
+  (allocate and free) memory at their convenience. As an example `malloc`
+  allocates memory and returns a pointer to allocated memory and `free` frees
+  the memory so that allocator can recycle that memory. Once a pointer is
+  created inside a function, it can pass around this pointer to other functions
+  or libraries and even after memory is freed, passed copies of pointer may
+  exist in other software components (due to bug) and if accessed can lead to
+  invalid memory access issues.
+
+* Stack - Program starts execution with an allocated stack by underlying
+  execution environment which also ensures that stack pointer register is set
+  to base of stack memory and compiler derives all memory pointers for stack
+  objects (inside a function) from the stack pointer register. Program may be
+  written in a way which can pass around stack pointers to other functions. If
+  a passed copy of such a stack pointer is saved by another function and can be
+  accessed by it, then it may lead to stack invalid memory access issues.
+
+* Globals - Pointers to global memory are valid throughout the runtime of the
+  program and thus invalid memory access to global memory is not possible.
+  Although if a program is accessing global memory in a way that can lead to
+  out of bounds access, that can be leveraged to access address space of the
+  program which otherwise wasn’t possible.
+
+Two prominent patterns of invalid memory accesses are following (but not
+limited to)
+
+* Stale pointer accesses (temporal): Memory was freed (heap) or became out of
+  scope (stack) and due to a bug in software, pointer is still kept around and
+  reachable via some control flow. This can be termed as use after free or out
+  of scope accesses. With respect to heap memory such issues are commonly
+  called `use after free` (UAF). In case of stack, such issues are termed as
+  `stack use after return`, `stack use after scope`.
+
+* Incorrect pointer construction (spatial): Due to bug in bounds checking, an
+  incorrect pointer can be constructed and thus leading to invalid memory
+  access. Similarly due to a bug in arithmetics (integer overflow) or bad
+  casting (signed to unsigned), bad offsets can be generated and eventually
+  leading to incorrect pointer construction and out of bounds accesses. More
+  commonly they are termed `stack` or `heap buffer overflows`.
+
+To catch such inadvertent programming errors, performing memory validity check
+at access time is required. When the memory is valid to access (as an example
+after allocation in `malloc` or on a function call for stack locals),
+software can associate a `tag` value with the memory, store assigned `tag` in a
+special memory (tag storage) and annotate that `tag` in high unused bits of the
+pointer. This ensures that whenever the pointer is passed around, pointer is
+always tagged with `tag` assigned at the time when memory became valid. When
+memory is not allowed to be accessible (as an example in when memory is freed
+using `free` or stack locals are out of scope after a function has returned)
+then software can change assigned `tag` in tag storage. On a memory access (i.e
+pointer dereference), `tag` in pointer is checked against stored `tag` for that
+memory and if tags do not match then it is due to a memory safety bug in
+program.
+
+Existing software mechanisms using compiler assisted software instrumentation
+and runtime support exist (address sanitizer aka ASan) cite:[ASAN]. However
+software approach has significant cost from performance perspective and are
+mostly limited to unit test, developer test or special test harness (like
+fuzzing) environments. Hardware assistance in management and checking of `tags`
+on memory accesses helps in more scalable testing of software in variety of
+deployment scenarios including production.
+
+Leveraging this software usage model, the `Zimte` extension defines a mechanism
+for tagged pointer construction, tag management instructions to store tags and
+tag checks on memory accesses (pointer dereferences). `Svatag` extension
+defines that `tag` is stored in virtual memory along with protection mechanisms
+for tag storage.
