@@ -218,6 +218,12 @@ splitted stores.
   A memory access (load or store) to some virtual address `va` can not bypass
   the older store initiated by `settag/setinvtag rs1=va`.
 
+  This specification defines tag as the entity associated to virtual addresses.
+  In case of aliasing (multiple virtual addresses map to same physical address),
+  it is software's responsibility to ensure that the tags are set according to
+  software's need for respective virtual address prior to memory accesses via
+  aliased virtual address.
+
 * Exceptions
 
   `settag/setinvtag` can raise store page fault or access fault depending on
