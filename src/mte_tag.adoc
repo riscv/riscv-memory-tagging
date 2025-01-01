@@ -55,39 +55,62 @@ contain the code size growth.
 
 Following are the instructions to place `pointer_tag` in the source register
 
-==== Generate a tag - gentag rs1
+==== Generate a tag - gentag rd, rs1
 
 If memory tagging is enabled in the current execution environment (see
-<<MEM_TAG_EN>>), hart randomly generates a `pointer_tag` value, clears
-`rs1[b63:pointer_tag_width]` bits in `rs1` and performs an OR operation with
-`rs1[b63:pointer_tag_width]` and places the result back in `rs1`.
+<<MEM_TAG_EN>>), hart clears `rd`, generates a `pointer_tag` value with at
+least 1-bit different from `rs1[b63:pointer_tag_width]` and places the result
+back in `rd[b63:pointer_tag_width]`.
 
 [wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:['00000']},
+  {bits:  5, name: 'rd', attr:['pointer_tag']},
   {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['pointer']},
+  {bits:  5, name: 'rs1', attr:['tagged_pointer']},
   {bits:  4, name: 'tag_imm4', attr:['0000']},
   {bits:  1, name: '0', attr:['0']},
   {bits:  7, name: '1000011', attr:['gentag']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-==== Arithmetics on tag - addtag rs1
+[NOTE]
+=====
+`gentag` can be used by compiler in prologue of the function to generate a
+`pointer_tag` value different from `pointer_tag` of previous stack frame.
+Compiler can generate following sequence in function prologues
 
-`addtag rs1` is pseudo for `gentag rs1` with `tag_imm4 != 0`. If memory tagging
-is enabled in the current execution environment (see <<MEM_TAG_EN>>), hart
-performs an add of `tag_imm4` to `pointer_tag` bits
-(`rs1[b63:pointer_tag_width]`) in `rs1` by adding  and place the result back in
-`rs1[b63:pointer_tag_width]`.
+[listing]
+-----
+    function_prologue:
+        addi sp, sp, -512 # stack frame size of 512 bytes
+        gentag t0, sp     # generate a pointer_tag and place it in t0
+        xor sp, sp, t0
+-----
+
+`gentag` ensures that tag generated in t0 is different from `pointer_tag`
+value placed in `sp`. Subsequent `xor` operation further mixes `pointer_tag`
+value and at the same time ensures safer construction of tagged (or non-tagged)
+pointer.
+=====
+
+==== Arithmetics on pointer tag - addtag rd, rs1
+
+`addtag rd, rs1` is a pseudo for `gentag rd, rs1` with tag_imm4 != 0. If memory
+tagging is enabled in the current execution environment (see <<MEM_TAG_EN>>),
+`addtag rd, rs1` instruction performs addition of `pointer_tag` specified in
+`rs1[b63:pointer_tag_width]` with `tag_imm4` shifted left by
+`XLEN - pointer_tag_width` bits and places incremented `pointer_tag` value in
+`rd[b63:pointer_tag_width]`. If memory tagging is disabled in the current
+execution environment, then `addtag` instruction falls back to zimop behavior
+and zeroes destination register.
 
 [wavedrom, ,svg]
 ....
 {reg: [
   {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:['00000']},
+  {bits:  5, name: 'rd', attr:['pointer_tag']},
   {bits:  3, name: 'funct3', attr:['100']},
   {bits:  5, name: 'rs1', attr:['tagged_pointer']},
   {bits:  4, name: 'tag_imm4', attr:['non-zero']},
@@ -103,7 +126,25 @@ tags derived from a base tag (base tag obtained via gentag). Compiler can use
 this mechanism to assign different tags (with same base tag) for consecutive
 objects on stack and mitigate adjacent overflow bugs. This also helps with
 language runtime during events like exception unwind to calculate tags for
-objects on stack in a deterministic manner.
+objects on stack in a deterministic manner. Compiler can use following codegen
+to assign different tags for consecutive objects in the stack
+
+[listing]
+-----
+    function_prologue:
+        addi sp, sp, -512 # stack frame size of 512 bytes
+        gentag t0, sp     # generate a pointer_tag and place it in t0
+        xor sp, sp, t0
+         :
+        addi s1, sp, 16
+        addtag t0, sp, 1  # tag_imm4 = 1
+        addi s1, s1, t0
+         :
+        addi s2, sp, 32
+        addtag t0, sp, 2  # tag_imm4 = 2
+        addi s2, s2, t0
+-----
+
 =====
 
 [[TAG_STORE]]
