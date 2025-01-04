@@ -279,8 +279,12 @@ If memory tagging is enabled in the current execution environment (see
 first stage page table, all regular loads and stores to memory chunks (`mc`)
 in that page are subject to following checks
 
+* If `pointer_tag == 0` in pointer and per-pointer tag check elision is enabled
+  (see <<TAGCHECK_ELIDE>>), then tag checks are completely elided on that memory
+  access.
+
 * If `mc_tag` corresponding to `mc` is invalid, hart raises a software check
-  exception with tval = 4
+  exception with tval = 4.
 
 * If `mc_tag` is valid, hart evaluates expression `mc_tag == pointer_tag` and
   if false then hart raises a software check exception with tval = 4.
@@ -323,6 +327,48 @@ can choose to enable on per-page basis. Furthermore, this allows software to
 enable memory tagging only for heap.
 ====
 
+[[TAGCHECK_ELIDE]]
+=== Per-pointer tag check elision
+
+Certain pointers can be elided for tag checks if software (compiler) can
+statically determine that they are safe to access. One such situation is
+function locals where compiler can statically determine that memory access is
+not out of bounds or out of scope. Although pointers to function locals passed
+to another function will require tag checks. Thus page tables will mark such
+pages tagged page. Thus `Zimte` defines a `EN_TAG_ELIDE`(see
+<<MEMTAG_CSR_CTRL>>) control in `__x__envcfg` CSR. If `EN_TAG_ELIDE` is set
+then a pointer with `pointer_tag == 0` is not subject to tag checks. If
+`EN_TAG_ELIDE` control is clear in `__x__envcfg` CSR and page is tagged page
+then memory access is subject to tag check irrespective of `pointer_tag` value
+in pointer.
+
+[NOTE]
+=====
+Compiler can elide tag checks on memory accesses local to a function and thus
+gain performance back. If pointer to a local stack variable is passed to
+another function, then compiler can set a tag for that local variable and
+annotate pointer with `pointer_tag`. Something along the below listing.
+
+[listing]
+-----
+    function_prologue:
+        addi sp, sp, -512 # stack frame size of 512 bytes
+        gentag t0, sp     # generate a pointer_tag and place it in t0
+         :
+        xor sp, sp, t0
+        addi a1, sp, 16
+        addtag t0, sp, 1  # tag_imm4 = 1
+        addi a1, a1, t0   # annotate pointer `a1` with tag
+        settag a1         # set tag in tag storage
+        addi a2, sp, 32
+        addtag t0, sp, 2  # tag_imm4 = 2
+        addi a2, a2, t0   # annotate pointer `a2` with tag
+        settag a1         # set tag in tag storage
+        jal foo           # call function `foo` with tagged pointers `a1` and `a2`
+-----
+
+=====
+
 [[MEMTAG_CSR_CTRL]]
 === CSR bits for memory tagging
 
@@ -332,11 +378,13 @@ enabling memory tagging for M-mode, it must follow zimop behavior for Zimte
 instructions in M-mode.
 
 Enablement for privilege modes less than M-mode is controlled through
-`__x__envcfg` CSR. Zimte adds two bits termed as `MTE_MODE` to `__x__envcfg` CSR which
-controls enabling of memory tagging and `pointer_tag_width` for the next
-privilege mode. A `MT_ASYNC` bit is added to `__x__envcfg` CSR and if set,
+`__x__envcfg` CSR. Zimte adds two bits termed as `MTE_MODE` to `__x__envcfg`
+CSR which controls enabling of memory tagging and `pointer_tag_width` for the
+next privilege mode. A `MT_ASYNC` bit is added to `__x__envcfg` CSR and if set,
 software check exceptions due to tag mismatches on store operations can be
-reported asynchronously (see <<ASYNC_SW_CHECK>>).
+reported asynchronously (see <<ASYNC_SW_CHECK>>). An `EN_TAG_ELIDE` bit is
+added to `__x__envcfg` CSR and if set, a pointer with `pointer_tag == 0`
+becomes special pointer tag and bypasses tag checks (see <<TAGCHECK_ELIDE>>).
 
 [[MEM_TAG_EN]]
 ==== Memory tagging enable and pointer_tag_width
@@ -382,7 +430,8 @@ configuration
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MTE_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
-  {bits: 21, name: 'WPRI'},
+  {bits:  1, name: 'EN_TAG_ELIDE'},
+  {bits: 20, name: 'WPRI'},
   {bits:  1, name: 'CDE'},
   {bits:  1, name: 'ADUE'},
   {bits:  1, name: 'PBMTE'},
@@ -414,7 +463,8 @@ When `MTE_MODE` is `0b00`, the following rules apply to HS/S-mode:
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MTE_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
-  {bits: 27, name: 'WPRI'},
+  {bits:  1, name: 'EN_TAG_ELIDE'},
+  {bits: 26, name: 'WPRI'},
 ], config:{lanes: 4, hspace:1024}}
 ....
 
@@ -442,7 +492,8 @@ When `MTE_MODE` is `0b00`, the following rules apply to VU/U-mode:
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MTE_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
-  {bits: 21, name: 'WPRI'},
+  {bits:  1, name: 'EN_TAG_ELIDE'},
+  {bits: 20, name: 'WPRI'},
   {bits:  1, name: 'CDE'},
   {bits:  1, name: 'ADUE'},
   {bits:  1, name: 'PBMTE'},
