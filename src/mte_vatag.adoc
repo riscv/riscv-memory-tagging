@@ -80,3 +80,21 @@ spanning VITT range. VITT range is defined as below
   tag_memory_region_end = mc_tag_va(HIGHEST_VADDR_CURR_PRIV)
   LOWEST_VADDR_CURR_PRIV: Lowest virtual address in current privilege.
   HIGHEST_VADDR_CURR_PRIV: Highest virtual address in current privilege.
+
+.Lowest and highest virtual addresses
+[width=100%]
+[%header, cols="^4,^12"]
+|===
+|Privilege level | LOWEST_VADDR_CURR_PRIV | HIGHEST_VADDR_CURR_PRIV
+|  U             | 0                      | 2 ^ (VADDR_BITS) - 1
+|  S / HS / VS   | 2 ^ (VADDR_BITS)       | 2 ^ (VADDR_BITS) OR (2 ^ (VADDR_BITS) - 1)
+|  M             | `Impl. defined`        | `Impl. defined`
+|===
+
+VADDR_BITS is virtual addressing bits. VADDR_BITS can be 39, 48 or 57
+depending on Sv39, Sv48 or Sv57 virtual addressing mode in `satp` CSR.
+
+`Svatag` assumes an even split in address space between user and supervisor
+with user address space spanning from zero to maxium positive address while
+supervisor address space spanning from minimum negative value to maximum
+negative value.
