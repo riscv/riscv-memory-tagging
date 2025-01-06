@@ -270,7 +270,9 @@ splitted stores.
   `settag/setinvtag` can raise store page fault or access fault depending on
   how tag storage is oragnized. If implementation doesn't support misaligned
   accesses, `settag/setinvtag` instruction can raise misaligned exception if
-  calculated address for locating tag is unaligned.
+  calculated address for locating tag is unaligned. Tag storage memory must be
+  idempotent memory else `settag/setinvtag` raise store/AMO access-fault
+  exception.
 
 [[TAG_CHECKS]]
 === tag checks
@@ -317,6 +319,8 @@ environment.
 If memory tagging is enabled for the current execution environment (see
 <<MEM_TAG_EN>>) and PTE.MTAG = 1, then the page is considered a tagged page and
 load / stores to such a page are subject to tag checks (see <<TAG_CHECKS>>).
+Underlying tagged page must be idempotent memory else tag look up for referenced
+virtual memory will result in load access-fault exception.
 
 [NOTE]
 ====
