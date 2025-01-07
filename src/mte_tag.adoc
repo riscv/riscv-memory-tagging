@@ -456,7 +456,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to M-mode:
   {bits:  2, name: 'CBIE'},
   {bits:  1, name: 'CBCFE'},
   {bits:  1, name: 'CBZE'},
-  {bits: 23, name: 'WPRI'},
+  {bits: 24, name: 'WPRI'},
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MTE_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
@@ -469,7 +469,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to M-mode:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension adds the `MTE_MODE` field (bit 8:2) to `menvcfg`. When the
+The Zimte extension adds the `MTE_MODE` field (bit 34:2) to `menvcfg`. When the
 `MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 HS/S-mode.
 
@@ -498,7 +498,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to HS/S-mode:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension adds the `MTE_MODE` field (bit 8:2) to `senvcfg`. When the
+The Zimte extension adds the `MTE_MODE` field (bit 34:2) to `senvcfg`. When the
 `MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 VU/U-mode.
 
@@ -518,7 +518,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to VU/U-mode:
   {bits:  2, name: 'CBIE'},
   {bits:  1, name: 'CBCFE'},
   {bits:  1, name: 'CBZE'},
-  {bits: 23, name: 'WPRI'},
+  {bits: 24, name: 'WPRI'},
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MTE_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
@@ -531,7 +531,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to VU/U-mode:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension adds the `MTE_MODE` field (bit 8:2) to `henvcfg`. When the
+The Zimte extension adds the `MTE_MODE` field (bit 34:2) to `henvcfg`. When the
 `MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 VS-mode.
 
