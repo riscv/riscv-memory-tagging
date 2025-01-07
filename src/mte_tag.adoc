@@ -275,11 +275,25 @@ splitted stores.
   exception.
 
 [[TAG_CHECKS]]
-=== tag checks
+=== tag checks and privilege modes
+
+==== M-mode
+If memory tagging is enabled in M-mode (see <<MEM_TAG_EN>>), all regular loads
+and stores are subject to memory tagging checks.
+
+==== Less than M-mode
 If memory tagging is enabled in the current execution environment (see
-<<MEM_TAG_EN>>) and page is marked as tagged page (see <<TAGGED_PAGE>>) in the
-first stage page table, all regular loads and stores to memory chunks (`mc`)
-in that page are subject to following checks
+<<MEM_TAG_EN>>) and `satp.MODE == Bare`, then all loads and stores are subject
+to tag checks.
+
+If memory tagging is enabled in the current execution environment and
+`satp.MODE != Bare`, then only loads/stores belonging to pages marked as tagged
+page (see <<TAGGED_PAGE>>) in the first stage page table are subject to memory
+tagging checks.
+
+==== tag checks
+Once a load/store is determined to be subject to memory tagging checks,
+following checks are performed
 
 * If `pointer_tag == 0` in pointer and per-pointer tag check elision is enabled
   (see <<TAGCHECK_ELIDE>>), then tag checks are completely elided on that memory
