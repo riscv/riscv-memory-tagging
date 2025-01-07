@@ -376,10 +376,7 @@ annotate pointer with `pointer_tag`. Something along the below listing.
 [[MEMTAG_CSR_CTRL]]
 === CSR bits for memory tagging
 
-In M-mode, enable for memory tagging and subsequent behavior of Zimte
-instructions is implementation specific. Although if an implementation is not
-enabling memory tagging for M-mode, it must follow zimop behavior for Zimte
-instructions in M-mode.
+In M-mode, enable for memory tagging is controlled via `mseccfg` CSR.
 
 Enablement for privilege modes less than M-mode is controlled through
 `__x__envcfg` CSR. Zimte adds two bits termed as `MTE_MODE` to `__x__envcfg`
@@ -417,6 +414,35 @@ configuration
   implementation supports both `pointer_tag` widths.
 
   If xMTE_MODE == 0b00 then xMTE_MODE.MT_ASYNC becomes WPRI
+
+==== Machine Security Configuration Register(`mseccfg`)
+
+.Machine security configuration register(`mseccfg`)
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'MML'},
+  {bits:  1, name: 'MMWP'},
+  {bits:  1, name: 'RLB'},
+  {bits:  5, name: 'WPRI'},
+  {bits:  1, name: 'USEED'},
+  {bits:  1, name: 'SSEED'},
+  {bits:  1, name: 'MLPE'},
+  {bits: 21, name: 'WPRI'},
+  {bits:  2, name: 'PMM'},
+  {bits:  2, name: 'MTE_MODE'},
+  {bits:  1, name: 'MT_ASYNC'},
+  {bits:  1, name: 'EN_TAG_ELIDE'},
+  {bits: 26, name: 'WPRI'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+The Zimte extension adds the `MTE_MODE` field (bit 34:2) to `mseccfg`. When the
+`MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
+M-mode.
+
+When `MTE_MODE` is `0b00`, the following rules apply to M-mode:
+* Zimte instructions will revert to their behavior as defined by Zimop.
 
 ==== Machine Environment Configuration Register (`menvcfg`)
 

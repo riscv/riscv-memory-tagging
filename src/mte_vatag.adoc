@@ -54,10 +54,9 @@ requires read, modify (masking and shifting of bits) and store back to
 [[VIRT_TAG_BASE_CSR]]
 === Tag table base address CSRs
 
-Tag storage base address (`__x__VITT_BASE`) for M-mode can be be implementation
-specific. VITT base virtual address for privilege mode less than M-mode is
-defined using privileged CSRs. Tag table base address must be 4K aligned.
-Following table list the privileged CSRs.
+Tag storage base virtual address (`__x__VITT_BASE`) is defined using privileged
+CSRs. Tag table base address must be 4K aligned. Following table list the
+privileged CSRs.
 
 .Privileged tag base address CSRs
 [width=100%]
@@ -67,7 +66,7 @@ Following table list the privileged CSRs.
 |  U             | `svittu`
 |  S / HS        | `svitts`
 |  VS            | `vsvitts`
-|  M             | `Impl. defined`
+|  M             | `mvitt`
 |===
 
 [[TAG_MEM_PROTECTION]]
@@ -88,7 +87,7 @@ spanning VITT range. VITT range is defined as below
 |Privilege level | LOWEST_VADDR_CURR_PRIV | HIGHEST_VADDR_CURR_PRIV
 |  U             | 0                      | 2 ^ (VADDR_BITS) - 1
 |  S / HS / VS   | 2 ^ (VADDR_BITS)       | 2 ^ (VADDR_BITS) OR (2 ^ (VADDR_BITS) - 1)
-|  M             | `Impl. defined`        | `Impl. defined`
+|  M             | 0                      | `Impl. defined`
 |===
 
 VADDR_BITS is virtual addressing bits. VADDR_BITS can be 39, 48 or 57
@@ -98,3 +97,6 @@ depending on Sv39, Sv48 or Sv57 virtual addressing mode in `satp` CSR.
 with user address space spanning from zero to maxium positive address while
 supervisor address space spanning from minimum negative value to maximum
 negative value.
+
+Lowest virtual address in M-mode is defined to be 0 and highest virtual address
+for M-mode is implementation dependent.
