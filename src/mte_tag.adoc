@@ -59,8 +59,8 @@ Following are the instructions to place `pointer_tag` in the source register
 
 If memory tagging is enabled in the current execution environment (see
 <<MEM_TAG_EN>>), hart clears `rd`, generates a `pointer_tag` value with at
-least 1-bit different from `rs1[b63:pointer_tag_width]` and places the result
-back in `rd[b63:pointer_tag_width]`.
+least 1-bit different from `rs1[XLEN:XLEN-pointer_tag_width+1]` and places the result
+back in `rd[XLEN:XLEN-pointer_tag_width+1]`.
 
 [wavedrom, ,svg]
 ....
@@ -100,9 +100,9 @@ pointer.
 `addtag rd, rs1` is a pseudo for `gentag rd, rs1` with tag_imm4 != 0. If memory
 tagging is enabled in the current execution environment (see <<MEM_TAG_EN>>),
 `addtag rd, rs1` instruction performs addition of `pointer_tag` specified in
-`rs1[b63:pointer_tag_width]` with `tag_imm4` shifted left by
+`rs1[XLEN:XLEN-pointer_tag_width+1]` with `tag_imm4` shifted left by
 `XLEN - pointer_tag_width` bits and places incremented `pointer_tag` value in
-`rd[b63:pointer_tag_width]`. If memory tagging is disabled in the current
+`rd[XLEN:XLEN-pointer_tag_width+1]`. If memory tagging is disabled in the current
 execution environment, then `addtag` instruction falls back to zimop behavior
 and zeroes destination register.
 
@@ -174,9 +174,9 @@ required by software, it can be added.
 
 If memory tagging is enabled in the current execution environment (see
 <<MEM_TAG_EN>>), `settag` instruction creates a `mc_tag` =
-`rs1[b63:pointer_tag_width]` and stores `mc_tag(s)` for consecutive memory
-chunks encoded by `chunk_count` starting with the first memory chunk calculated
-from virtual address specified in `rs1`.
+`rs1[XLEN:XLEN-pointer_tag_width+1]` and stores `mc_tag(s)` for consecutive
+memory chunks encoded by `chunk_count` starting with the first memory chunk
+calculated from virtual address specified in `rs1`.
 
 [wavedrom, ,svg]
 ....
