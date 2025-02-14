@@ -77,22 +77,7 @@ back in `rd[XLEN:XLEN-pointer_tag_width+1]`.
 
 [NOTE]
 =====
-`gentag` can be used by compiler in prologue of the function to generate a
-`pointer_tag` value different from `pointer_tag` of previous stack frame.
-Compiler can generate following sequence in function prologues
-
-[listing]
------
-    function_prologue:
-        addi sp, sp, -512 # stack frame size of 512 bytes
-        gentag t0, sp     # generate a pointer_tag and place it in t0
-        xor sp, sp, t0
------
-
-`gentag` ensures that tag generated in t0 is different from `pointer_tag`
-value placed in `sp`. Subsequent `xor` operation further mixes `pointer_tag`
-value and at the same time ensures safer construction of tagged (or non-tagged)
-pointer.
+See Appendix for example how this can be used by codegen.
 =====
 
 ==== Arithmetics on pointer tag - addtag rd, rs1
@@ -126,25 +111,9 @@ tags derived from a base tag (base tag obtained via gentag). Compiler can use
 this mechanism to assign different tags (with same base tag) for consecutive
 objects on stack and mitigate adjacent overflow bugs. This also helps with
 language runtime during events like exception unwind to calculate tags for
-objects on stack in a deterministic manner. Compiler can use following codegen
-to assign different tags for consecutive objects in the stack
+objects on stack in a deterministic manner.
 
-[listing]
------
-    function_prologue:
-        addi sp, sp, -512 # stack frame size of 512 bytes
-        gentag t0, sp     # generate a pointer_tag and place it in t0
-        xor sp, sp, t0
-         :
-        addi s1, sp, 16
-        addtag t0, sp, 1  # tag_imm4 = 1
-        addi s1, s1, t0
-         :
-        addi s2, sp, 32
-        addtag t0, sp, 2  # tag_imm4 = 2
-        addi s2, s2, t0
------
-
+See Appendix for example how this can be used by codegen.
 =====
 
 [[TAG_STORE]]
@@ -554,3 +523,30 @@ When `MTE_MODE` is `0b00`, the following rules apply to VS-mode:
 * Zimte instructions will revert to their behavior as defined by Zimop.
 
 <<<
+
+=== Appendix
+==== Example: stack tagging codegen
+[listing]
+-----
+    function:
+        # N.B. sp remains untagged at all times
+        addi sp, sp, -512 # stack frame size of 512 bytes
+        gentag t0, zero   # generate a pointer_tag and place it in t0
+         :
+        # first object is tagged <random tag> + 1
+        addi s1, sp, 16
+        addtag t1, t0, 1  # tag_imm4 = 1
+        or s1, s1, t1
+         :
+        # second object is tagged <random tag> + 2
+        addi s2, sp, 32
+        addtag t1, t0, 2  # tag_imm4 = 2
+        or s2, s2, t1
+         :
+        # scope of second object starts, tag
+        settag s2, 1
+        # [...] do things with s2 while in scope
+        # scope of second object ends, tag back to zero
+        addi s2, sp, 16
+        settag s2, 1
+-----
