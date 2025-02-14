@@ -80,15 +80,16 @@ back in `rd[XLEN:XLEN-pointer_tag_width+1]`.
 See Appendix for example how this can be used by codegen.
 =====
 
-==== Arithmetics on pointer tag - addtag rd, rs1
+==== Arithmetics on pointer tag - addtag rd, rs1, #tag_imm4
 
 `addtag rd, rs1` is a pseudo for `gentag rd, rs1` with tag_imm4 != 0. If memory
 tagging is enabled in the current execution environment (see <<MEM_TAG_EN>>),
 `addtag rd, rs1` instruction performs addition of `pointer_tag` specified in
-`rs1[XLEN:XLEN-pointer_tag_width+1]` with `tag_imm4` shifted left by
-`XLEN - pointer_tag_width` bits and places incremented `pointer_tag` value in
-`rd[XLEN:XLEN-pointer_tag_width+1]`. If memory tagging is disabled in the current
-execution environment, then `addtag` instruction falls back to zimop behavior
+`rs1[XLEN:XLEN-pointer_tag_width+1]` with the unsigned value `tag_imm4` shifted
+left by `XLEN - pointer_tag_width` bits and places incremented `pointer_tag`
+value in `rd[XLEN:XLEN-pointer_tag_width+1]`.
+If memory tagging is disabled in the current execution environment,
+then `addtag` instruction falls back to zimop behavior
 and zeroes destination register.
 
 [wavedrom, ,svg]
