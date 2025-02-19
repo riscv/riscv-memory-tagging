@@ -74,7 +74,7 @@ privileged CSRs.
 
 Hart must raise access faults on regular loads and stores to virtual addresses
 spanning VITT range. Hart must also raise access fault on `settag` and `setinvtag`
-instructions to the VITT
+instructions to the non-VITT
 range. VITT range is defined as below
 
   tag_memory_region_start = mc_tag_va(LOWEST_VADDR_CURR_PRIV)
