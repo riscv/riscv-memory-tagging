@@ -35,13 +35,13 @@ requires masking and shifting of bits after the value is loaded from
 `mc_tag_va`.
 ====
 
-When `settag` or `setinvtag` instructions are executed for memory chunks(s)
-starting at the virtual address `va` (see <<TAG_STORE>>) and memory tagging is
-enabled for current execution environment, then hart performs tag store by
-performing a store on `mc_tag_va` for the corresponding `va`.
+When `settag` instruction is executed for memory chunks(s) starting at the
+virtual address `va` (see <<TAG_STORE>>) and memory tagging is enabled for
+current execution environment, then hart performs tag store by performing
+a store on `mc_tag_va` for the corresponding `va`.
 
-Tag stores as part of `settag/setinvtag` can raise store page fault on
-`mc_tag_va` address, if it doesn't have write permissions in page tables.
+Tag stores as part of `settag` can raise store page fault on `mc_tag_va`
+address, if it doesn't have write permissions in page tables.
 
 [NOTE]
 ====

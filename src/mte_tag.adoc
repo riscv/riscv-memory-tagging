@@ -161,48 +161,6 @@ calculated from virtual address specified in `rs1`.
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-==== Set a memory chunk in accessible: setinvtag rs1, #chunk_count
-
-A memory chunk is inaccessible, if `mc_tag` for memory chunk is set to invalid
-tag value. If memory tagging is enabled in the current execution environment
-(see <<MEM_TAG_EN>>), `setinvtag` instruction creates `mc_tag` = `invalid_tag`
-and stores `mc_tag(s)` for consecutive memory chunks encoded by `chunk_count`
-starting with the first memory chunk calculated from virtual address specified
-in `rs1`. A load/store to a memory chunk must raise a software check exception
-(see <<TAG_CHECKS>>) if `mc_tag` for that memory chunk is set to
-`invalid_tag` value. Encoding of `invalid_tag` differ based on `mc_tag_width`.
-Following table describes `invalid_tag` encodings for different configurations.
-
-.`invalid_tag` encodings
-[width=100%]
-[%header, cols="^4,^12"]
-|===
-|`mc_tag_width`| `invalid_tag` encoding
-|  4           | `0b1111`
-|  8           | `0b1xxxxxxx`
-|===
-
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  7, name: 'opcode', attr:'SYSTEM'},
-  {bits:  5, name: 'rd', attr:['00000']},
-  {bits:  3, name: 'funct3', attr:['100']},
-  {bits:  5, name: 'rs1', attr:['pointer']},
-  {bits:  4, name: 'imm4', attr:['chunk_count']},
-  {bits:  1, name: '1', attr:['1']},
-  {bits:  7, name: '1000001', attr:['setinvtag']},
-], config:{lanes: 1, hspace:1024}}
-....
-
-[NOTE]
-=====
-An invalid tag awareness in hart allows software to implement quarantine of
-memory more reliably and efficiently without reserving a tag. This also helps
-software to create redzones and smaller than page size guard gaps efficiently
-between memory objects.
-=====
-
 [NOTE]
 ====
 .Note on tag stores
@@ -214,20 +172,20 @@ width of tag store operation can be 128 bit wide (each memory chunk needs 8 bit
 and maximum possible chunks are 16. 8x16 = 128 bit).
 ====
 
-`settag` and `setinvtag` are read, modify and then write operation on the
+`settag` may end being a read, modify and then write operation on the
 memory region defined by Svatag extension and there are no atomicity
 requirements on the implementation. If atomicity is desired then it is
 software's responsibility.
 
-`settag` and `setinvtag` can generate store operations larger than maximum
-store width supported by implementation and implementation may choose to split
-it into multiple stores with no ordering requirements or dependencies among
+`settag` can generate store operations larger than maximum store width
+supported by implementation and implementation may choose to split it
+into multiple stores with no ordering requirements or dependencies among
 splitted stores.
 
 * Memory ordering requirement
 
   A memory access (load or store) to some virtual address `va` can not bypass
-  the older store initiated by `settag/setinvtag rs1=va`.
+  the older store initiated by `settag rs1=va`.
 
   This specification defines tag as the entity associated to virtual addresses.
   In case of aliasing (multiple virtual addresses map to same physical address),
@@ -237,12 +195,11 @@ splitted stores.
 
 * Exceptions
 
-  `settag/setinvtag` can raise store page fault or access fault depending on
-  how tag storage is oragnized. If implementation doesn't support misaligned
-  accesses, `settag/setinvtag` instruction can raise misaligned exception if
-  calculated address for locating tag is unaligned. Tag storage memory must be
-  idempotent memory else `settag/setinvtag` raise store/AMO access-fault
-  exception.
+  `settag` can raise store page fault or access fault depending on how tag
+  storage is oragnized. If implementation doesn't support misaligned accesses,
+  `settag` instruction can raise misaligned exception if calculated address
+  for locating tag is unaligned. Tag storage memory must be idempotent memory
+  else `settag` raise store/AMO access-fault exception.
 
 [[TAG_CHECKS]]
 === tag checks and privilege modes
@@ -269,11 +226,8 @@ following checks are performed
   (see <<TAGCHECK_ELIDE>>), then tag checks are completely elided on that memory
   access.
 
-* If `mc_tag` corresponding to `mc` is invalid, hart raises a software check
-  exception with tval = 4.
-
-* If `mc_tag` is valid, hart evaluates expression `mc_tag == pointer_tag` and
-  if false then hart raises a software check exception with tval = 4.
+* Hart evaluates expression `mc_tag == pointer_tag` and if false then hart
+  raises a software check exception with tval = 4.
 
 If a load / store is subject to tag checks, fetching `mc_tag` from the tag
 memory region holding tags may also result in a load page fault or load access
