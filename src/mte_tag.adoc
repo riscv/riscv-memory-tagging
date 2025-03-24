@@ -222,6 +222,9 @@ tagging checks.
 Once a load/store is determined to be subject to memory tagging checks,
 following further checks are performed
 
+* All stack pointer (sp/x2) relative accesses are not checked for tags (see
+  notes).
+
 * If hart is in `TAG_CHECK_ELIDE` state (see <<TAGCHECK_ELIDE>>), then tag
   checks are completely elided on that memory access.
 
@@ -231,6 +234,12 @@ following further checks are performed
 If a load / store is subject to tag checks, fetching `mc_tag` from the tag
 memory region holding tags may also result in a load page fault or load access
 fault and thus the hart report the virtual address of the tag in `xtval`.
+
+[NOTE]
+=====
+As much as possible, compiler uses stack pointer (x2) to access stack objects
+local to a function. These accesses are deemed to be safe and thus are not
+subject to tag checks.
 
 [[ASYNC_SW_CHECK]]
 === Asynchronous reporting for tag mismatches
