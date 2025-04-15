@@ -486,7 +486,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to VS-mode:
     function:
         # N.B. sp remains untagged at all times
         addi sp, sp, -512 # stack frame size of 512 bytes
-        gentag t0, zero   # generate a pointer_tag and place it in t0
+        gentag t0, zero   # generate a pointer_tag in high bits of t0
          :
         # first object is tagged <random tag> + 1
         addi s1, sp, 16
