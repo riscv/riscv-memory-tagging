@@ -127,6 +127,9 @@ immediate (#chunk_count) in the instruction. This instruction is encoded using
 `MOP.RR.0` from zimop extension. Immediate encodings in #chunk_count are zero
 based and thus #chunk_count = 0 means first chunk and #chunk_count = 15 means
 16th chunk.
+If memory tagging is disabled in the current execution environment,
+then `settag` instruction falls back to zimop behavior
+and zeroes x0, which is a no-op.
 
 [NOTE]
 ====
