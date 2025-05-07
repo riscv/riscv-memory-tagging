@@ -73,7 +73,9 @@ privileged CSRs.
 === Protection of tag storage
 
 Hart must raise access faults on regular loads and stores to virtual addresses
-spanning VITT range. VITT range is defined as below
+spanning VITT range. Hart must also raise access fault on `settag` instruction
+if the memory chunk specified in `rs1` overlaps with VITT range. VITT range is
+defined as below
 
   tag_memory_region_start = mc_tag_va(LOWEST_VADDR_CURR_PRIV)
   tag_memory_region_end = mc_tag_va(HIGHEST_VADDR_CURR_PRIV)
