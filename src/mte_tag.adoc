@@ -222,8 +222,9 @@ page (see <<TAGGED_PAGE>>) in the first stage page table are subject to memory
 tagging checks.
 
 ==== tag checks
-Once a load/store is determined to be subject to memory tagging checks,
-following further checks are performed
+Once a load/store is determined (after paging bit checks and *envcfg control
+bit checks) to be subject to memory tagging checks, following further checks
+are performed
 
 * All stack pointer (sp/x2) relative accesses are not checked for tags (see
   notes).
@@ -259,25 +260,39 @@ Note that tag check violations on loads must always be reported synchronously.
 [[TAGGED_PAGE]]
 === Tag checks on page basis
 
-Memory tagging extension extends first stage page table by introducing a new
-leaf PTE bit (bit position TBD) termed as `MTAG`. If an implementation
-implements memory tagging extension then `PTE.MTAG` is no more a reserved bit,
-irrespective of memory tagging is enabled or not for current execution
-environment.
+`Zimte` introduces `memory tag` (`MTAG`) bit in first stage page table which if
+set in page table entry and memory tagging is enabled from *envcfg CSR,
+following rules apply:
 
-If memory tagging is enabled for the current execution environment (see
-<<MEM_TAG_EN>>) and PTE.MTAG = 1, then the page is considered a tagged page and
-load / stores to such a page are subject to tag checks (see <<TAG_CHECKS>>).
-Underlying tagged page must be idempotent memory else tag look up for referenced
-virtual memory will result in load access-fault exception.
+ 1) tag checks are enforced on load/stores to such pages. See <<TAG_CHECKS>>
+    for further checks. Underlying tagged page must be idempotent memory else
+    tag look up for referenced virtual memory will result in load access-fault
+    exception.
+
+ 2) fetched instructions from pages with `MTAG=1` do not generate checked loads
+    and stores. Additionally fetched `gentag`, `addtag` and `settag`
+    instructions from such code page fallback to zimop behavior.
+
+ 3) If both rule 2 and rule 1 are applying, rule 2 takes precedence.
+
+ 4) An instruction crossing a page boundary with differing `MTAG` value,
+    common denominator of `MTAG=0` applies for such instruction.
+
+`MTAG` bit in page table entry remains a reserved bit if `XWR == 111` or
+`XWR == `010` and if set, will raise a page fault of original access type.
+
+If memory tagging is not enabled for the execution environment via *envcfg CSR,
+then `MTAG` bit in page table entry remains a reserved and if set will raise a
+page fault of original access type.
 
 [NOTE]
 ====
-A bit in page table entry allows software to enable memory tagging on per-page
-basis and thus can have several discontigous regions on which tagging can be
-enabled. Depending on complexity of program and memory allocator(s), software
-can choose to enable on per-page basis. Furthermore, this allows software to
-enable memory tagging only for heap.
+`MTAG` bit on data pages allows an software to opt into selected memory regions
+for checked loads and stores. Furthermore, `MTAG` bit on executable pages
+allows software to opt out certain code regions from being subject to checked
+loads and stores. From usability point of view, having loads and stores don't
+make sense for shadow stack pages or self modifying code. Thus `MTAG` bit is
+kept as reserved for such page table encodings.
 ====
 
 [[TAGCHECK_ELIDE]]
