@@ -223,11 +223,13 @@ tagging checks.
 
 ==== tag checks
 Once a load/store is determined to be subject to memory tagging checks,
-following checks are performed
+following further checks are performed
 
-* If `pointer_tag == 0` in pointer and per-pointer tag check elision is enabled
-  (see <<TAGCHECK_ELIDE>>), then tag checks are completely elided on that memory
-  access.
+* All stack pointer (sp/x2) relative accesses are not checked for tags (see
+  notes).
+
+* If hart is in `TAG_CHECK_ELIDE` state (see <<TAGCHECK_ELIDE>>), then tag
+  checks are completely elided on that memory access.
 
 * Hart evaluates expression `mc_tag == pointer_tag` and if false then hart
   raises a software check exception with tval = 4.
@@ -235,6 +237,12 @@ following checks are performed
 If a load / store is subject to tag checks, fetching `mc_tag` from the tag
 memory region holding tags may also result in a load page fault or load access
 fault and thus the hart report the virtual address of the tag in `xtval`.
+
+[NOTE]
+=====
+As much as possible, compiler uses stack pointer (x2) to access stack objects
+local to a function. These accesses are deemed to be safe and thus are not
+subject to tag checks.
 
 [[ASYNC_SW_CHECK]]
 === Asynchronous reporting for tag mismatches
@@ -273,44 +281,35 @@ enable memory tagging only for heap.
 ====
 
 [[TAGCHECK_ELIDE]]
-=== Per-pointer tag check elision
+=== tag check elide state
 
-Certain pointers can be elided for tag checks if software (compiler) can
+Certain memory accesses can be elided for tag checks if software (compiler) can
 statically determine that they are safe to access. One such situation is
 function locals where compiler can statically determine that memory access is
 not out of bounds or out of scope. Although pointers to function locals passed
 to another function will require tag checks. Thus page tables will mark such
-pages tagged page. Thus `Zimte` defines a `EN_TAG_ELIDE`(see
-<<MEMTAG_CSR_CTRL>>) control in `__x__envcfg` CSR. If `EN_TAG_ELIDE` is set
-then a pointer with `pointer_tag == 0` is not subject to tag checks. If
-`EN_TAG_ELIDE` control is clear in `__x__envcfg` CSR and page is tagged page
-then memory access is subject to tag check irrespective of `pointer_tag` value
-in pointer.
+pages tagged page. To help software elide tag checks on tagged pages, `Zimte`
+introduces a new hart state `transient tag check disable` (TTCD) state and is
+defined as below:
+
+* 0 - `TAG_CHECK_ENFORCED` - If memory tagging is enabled, tag checks enforced.
+* 1 - `TAG_CHECK_ELIDE` - If memory tagging is enabled, tag checks elided.
+
+`Zimte` defines a new instruction `nietc` short for next instruction elide tag
+check(s). Encoding for `nietc` is taken from `C.MOP.3`, thus making `Zimte`
+dependent on `C` and `Zcmop` extensions. If memory tagging is enabled, then
+instruction `nietc` sets `TTCD` to `TAG_CHECK_ELIDE` state. A subsequent memory
+load or store clears `TTCD` to `TAG_CHECK_ENFORCED. Thus any memory accesses
+originating from subsequent instruction can be elided for tag checks and re-arms
+the hart to check for tags thereafter.
 
 [NOTE]
 =====
-Compiler can elide tag checks on memory accesses local to a function and thus
-gain performance back. If pointer to a local stack variable is passed to
-another function, then compiler can set a tag for that local variable and
-annotate pointer with `pointer_tag`. Something along the below listing.
-
-[listing]
------
-    function_prologue:
-        addi sp, sp, -512 # stack frame size of 512 bytes
-        gentag t0, sp     # generate a pointer_tag and place it in t0
-         :
-        xor sp, sp, t0
-        addi a1, sp, 16
-        addtag t0, sp, 1  # tag_imm4 = 1
-        addi a1, a1, t0   # annotate pointer `a1` with tag
-        settag a1         # set tag in tag storage
-        addi a2, sp, 32
-        addtag t0, sp, 2  # tag_imm4 = 2
-        addi a2, a2, t0   # annotate pointer `a2` with tag
-        settag a1         # set tag in tag storage
-        jal foo           # call function `foo` with tagged pointers `a1` and `a2`
------
+Compiler can insert `nietc` before loads and stores which are accessing
+objects local to a function or container objects and gain performance back.
+It will lead to a code size growth (2 additional byte per load/store) but
+stack tagging will anyways lead to code size growth and it is expected that
+user enabling stack tagging has opted into code size growth as a trade-off.
 
 =====
 
@@ -324,9 +323,7 @@ Enablement for privilege modes less than M-mode is controlled through
 CSR which controls enabling of memory tagging and `pointer_tag_width` for the
 next privilege mode. A `MT_ASYNC` bit is added to `__x__envcfg` CSR and if set,
 software check exceptions due to tag mismatches on store operations can be
-reported asynchronously (see <<ASYNC_SW_CHECK>>). An `EN_TAG_ELIDE` bit is
-added to `__x__envcfg` CSR and if set, a pointer with `pointer_tag == 0`
-becomes special pointer tag and bypasses tag checks (see <<TAGCHECK_ELIDE>>).
+reported asynchronously (see <<ASYNC_SW_CHECK>>).
 
 [[MEM_TAG_EN]]
 ==== Memory tagging enable and pointer_tag_width
@@ -373,8 +370,7 @@ configuration
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MTE_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
-  {bits:  1, name: 'EN_TAG_ELIDE'},
-  {bits: 26, name: 'WPRI'},
+  {bits: 27, name: 'WPRI'},
 ], config:{lanes: 4, hspace:1024}}
 ....
 
@@ -401,8 +397,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to M-mode:
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MTE_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
-  {bits:  1, name: 'EN_TAG_ELIDE'},
-  {bits: 22, name: 'WPRI'},
+  {bits: 23, name: 'WPRI'},
   {bits:  1, name: 'CDE'},
   {bits:  1, name: 'ADUE'},
   {bits:  1, name: 'PBMTE'},
@@ -434,8 +429,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to HS/S-mode:
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MTE_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
-  {bits:  1, name: 'EN_TAG_ELIDE'},
-  {bits: 26, name: 'WPRI'},
+  {bits: 27, name: 'WPRI'},
 ], config:{lanes: 4, hspace:1024}}
 ....
 
@@ -463,8 +457,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to VU/U-mode:
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MTE_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
-  {bits:  1, name: 'EN_TAG_ELIDE'},
-  {bits: 22, name: 'WPRI'},
+  {bits: 23, name: 'WPRI'},
   {bits:  1, name: 'CDE'},
   {bits:  1, name: 'ADUE'},
   {bits:  1, name: 'PBMTE'},
@@ -479,6 +472,131 @@ VS-mode.
 When `MTE_MODE` is `0b00`, the following rules apply to VS-mode:
 
 * Zimte instructions will revert to their behavior as defined by Zimop.
+
+==== Machine Status Register (`mstatus`)
+
+.Machine-mode status register (`mstatus`) for RV64
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SIE'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'MIE'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SPIE'},
+  {bits:  1, name: 'UBE'},
+  {bits:  1, name: 'MPIE'},
+  {bits:  1, name: 'SPP'},
+  {bits:  2, name: 'VS[1:0]'},
+  {bits:  2, name: 'MPP[1:0]'},
+  {bits:  2, name: 'FS[1:0]'},
+  {bits:  2, name: 'XS[1:0]'},
+  {bits:  1, name: 'MPRV'},
+  {bits:  1, name: 'SUM'},
+  {bits:  1, name: 'MXR'},
+  {bits:  1, name: 'TVM'},
+  {bits:  1, name: 'TW'},
+  {bits:  1, name: 'TSR'},
+  {bits:  1, name: 'SPELP'},
+  {bits:  1, name: 'SPTTCD'},
+  {bits:  7, name: 'WPRI'},
+  {bits:  2, name: 'UXL[1:0]'},
+  {bits:  2, name: 'SXL[1:0]'},
+  {bits:  1, name: 'SBE'},
+  {bits:  1, name: 'MBE'},
+  {bits:  1, name: 'GVA'},
+  {bits:  1, name: 'MPV'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'MPELP'},
+  {bits:  1, name: 'MPTTCD'},
+  {bits: 20, name: 'WPRI'},
+  {bits:  1, name: 'SD'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+The Zimte extension introduces the `SPTTCD` (bit 24) and `MPTTCD` (bit 42)
+fields that hold the previous `TTCD`, and are updated as specified in
+<<TAGCHECK_ELIDE>>. The `__x__PTTCD` fields are encoded as follows:
+
+* 0 - `TAG_CHECK_ENFORCED` - If memory tagging is enabled, tag checks enforced.
+* 1 - `TAG_CHECK_ELIDE` - If memory tagging is enabled, tag checks elided.
+
+On a mret/sret, SPTTCD/MPTTCD is restored into hart's `TTCD` and SPTTCD/MPTTCD
+is cleared.
+
+==== Supervisor Status Register (`sstatus`)
+
+.Supervisor-mode status register (`sstatus`) when `SXLEN=64`
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SIE'},
+  {bits:  3, name: 'WPRI'},
+  {bits:  1, name: 'SPIE'},
+  {bits:  1, name: 'UBE'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SPP'},
+  {bits:  2, name: 'VS[1:0]'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  2, name: 'FS[1:0]'},
+  {bits:  2, name: 'XS[1:0]'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SUM'},
+  {bits:  1, name: 'MXR'},
+  {bits:  3, name: 'WPRI'},
+  {bits:  1, name: 'SPELP'},
+  {bits:  1, name: 'SPTTCD'},
+  {bits:  7, name: 'WPRI'},
+  {bits:  2, name: 'UXL[1:0]'},
+  {bits: 29, name: 'WPRI'},
+  {bits:  1, name: 'SD'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+Access to the `SPTTCD` field introduced by Zimte accesses the homonymous
+fields of `mstatus` when `V=0` and the homonymous fields of `vsstatus`
+when `V=1`.
+
+On a sret, SPTTCD is restored into hart's `TTCD` and SPTTCD is cleared.
+
+==== Virtual Supervisor Status Register (`vsstatus`)
+
+.Virtual supervisor status register (`vsstatus`) when `VSXLEN=64`
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SIE'},
+  {bits:  3, name: 'WPRI'},
+  {bits:  1, name: 'SPIE'},
+  {bits:  1, name: 'UBE'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SPP'},
+  {bits:  2, name: 'VS[1:0]'},
+  {bits:  2, name: 'WPRI'},
+  {bits:  2, name: 'FS[1:0]'},
+  {bits:  2, name: 'XS[1:0]'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SUM'},
+  {bits:  1, name: 'MXR'},
+  {bits:  3, name: 'WPRI'},
+  {bits:  1, name: 'SPELP'},
+  {bits:  1, name: 'SPTTCD'},
+  {bits:  7, name: 'WPRI'},
+  {bits:  2, name: 'UXL[1:0]'},
+  {bits: 29, name: 'WPRI'},
+  {bits:  1, name: 'SD'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+The Zimte extension introduces the `SPTTCD` (bit 24) field that hold the
+previous `TTCD`, and are updated as specified in <<TAGCHECK_ELIDE>>. The
+SPTTCD fields is encoded as follows:
+
+* 0 - `TAG_CHECK_ENFORCED` - If memory tagging is enabled, tag checks enforced.
+* 1 - `TAG_CHECK_ELIDE` - If memory tagging is enabled, tag checks elided.
 
 <<<
 
