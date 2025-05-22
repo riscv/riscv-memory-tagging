@@ -65,7 +65,10 @@ using `free` or stack locals are out of scope after a function has returned)
 then software can change assigned `tag` in tag storage. On a memory access (i.e
 pointer dereference), `tag` in pointer is checked against stored `tag` for that
 memory and if tags do not match then it is due to a memory safety bug in
-program.
+program. For rest of the document such memory accesses shall be referred to as
+`checked memory accesses` or `checked loads and stores`. Memory accesses or loads
+and stores not subject to tag checks shall be referred to as `unchecked memory
+accesses` or `unchecked loads and stores`.
 
 Existing software mechanisms using compiler assisted software instrumentation
 and runtime support exist (address sanitizer aka ASan) cite:[ASAN]. However
