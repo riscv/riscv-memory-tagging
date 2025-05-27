@@ -63,8 +63,7 @@ If memory tagging is enabled in the current execution environment (see
 the result in `rd[XLEN:XLEN-pointer_tag_width+1]`.
 
 If memory tagging is disabled in the current execution environment (see
-<<MEM_TAG_EN>>) or MTAG=1 (see <<TAGGED_PAGE>>) in the page table entry for
-code page, then `gentag` instruction falls back to zimop behavior and zeroes
+<<MEM_TAG_EN>>), then `gentag` instruction falls back to zimop behavior and zeroes
 destination register.
 
 [wavedrom, ,svg]
@@ -95,9 +94,8 @@ unsigned value `tag_imm4` shifted left by `XLEN - pointer_tag_width` bits and
 places incremented `pointer_tag` value in `rd[XLEN:XLEN-pointer_tag_width+1]`.
 
 If memory tagging is disabled in the current execution environment (see
-<<MEM_TAG_EN>>) or MTAG=1 (see <<TAGGED_PAGE>>) in the page table entry for
-code page, then `addtag` instruction falls back to zimop behavior and zeroes
-destination register.
+<<MEM_TAG_EN>>), then `addtag` instruction falls back to zimop behavior and
+zeroes destination register.
 
 [wavedrom, ,svg]
 ....
@@ -157,9 +155,8 @@ memory chunks encoded by `chunk_count` starting with the first memory chunk
 calculated from virtual address specified in `rs1`.
 
 If memory tagging is disabled in the current execution environment (see
-<<MEM_TAG_EN>>) or MTAG=1 (see <<TAGGED_PAGE>>) in the page table entry for
-code page, then `settag` instruction falls back to zimop behavior and zeroes
-x0, which is a no-op.
+<<MEM_TAG_EN>>), then `settag` instruction falls back to zimop behavior and
+zeroes x0, which is a no-op.
 
 [wavedrom, ,svg]
 ....
@@ -280,8 +277,8 @@ following rules apply:
     exception.
 
  2) fetched instructions from pages with `MTAG=1` do not generate checked loads
-    and stores. Additionally fetched `gentag`, `addtag` and `settag`
-    instructions from such code page fallback to zimop behavior.
+    and stores. This doesn't have any impact on behavior of `settag`, `gentag`
+    and `addtag` instructions.
 
  3) If both rule 2 and rule 1 are applying, rule 2 takes precedence.
 
