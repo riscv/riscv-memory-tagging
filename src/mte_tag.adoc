@@ -58,8 +58,7 @@ Following are the instructions to place `pointer_tag` in the source register
 ==== Generate a tag - gentag rd, rs1
 
 If memory tagging is enabled in the current execution environment (see
-<<MEM_TAG_EN>>) and code page has `MTAG` bit clear in the page table entry (see
-<<TAGGED_PAGE>>), hart clears `rd`, generates a `pointer_tag` value and places
+<<MEM_TAG_EN>>), hart clears `rd`, generates a `pointer_tag` value and places
 the result in `rd[XLEN:XLEN-pointer_tag_width+1]`.
 
 If memory tagging is disabled in the current execution environment (see
@@ -87,8 +86,7 @@ See Appendix for example how this can be used by codegen.
 ==== Arithmetics on pointer tag - addtag rd, rs1, #tag_imm4
 
 If memory tagging is enabled in the current execution environment (see
-<<MEM_TAG_EN>>) and code page has `MTAG` bit clear in the page table entry
-(see <<TAGGED_PAGE>>), `addtag rd, rs1` instruction performs addition of
+<<MEM_TAG_EN>>), `addtag rd, rs1` instruction performs addition of
 `pointer_tag` specified in `rs1[XLEN:XLEN-pointer_tag_width+1]` with the
 unsigned value `tag_imm4` shifted left by `XLEN - pointer_tag_width` bits and
 places incremented `pointer_tag` value in `rd[XLEN:XLEN-pointer_tag_width+1]`.
@@ -148,8 +146,7 @@ required by software, it can be added.
 ==== Store tag(s) for memory chunk(s): settag rs1, #chunk_count
 
 If memory tagging is enabled in the current execution environment (see
-<<MEM_TAG_EN>>) and code page has `MTAG` bit clear in the page table entry
-(see <<TAGGED_PAGE>>), `settag` instruction creates a `mc_tag` =
+<<MEM_TAG_EN>>), `settag` instruction creates a `mc_tag` =
 `rs1[XLEN:XLEN-pointer_tag_width+1]` and stores `mc_tag(s)` for consecutive
 memory chunks encoded by `chunk_count` starting with the first memory chunk
 calculated from virtual address specified in `rs1`.
