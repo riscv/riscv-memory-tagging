@@ -251,6 +251,7 @@ fault and thus the hart report the virtual address of the tag in `xtval`.
 As much as possible, compiler uses stack pointer (x2) to access stack objects
 local to a function. These accesses are deemed to be safe and thus are not
 subject to tag checks.
+=====
 
 [[ASYNC_SW_CHECK]]
 === Asynchronous reporting for tag mismatches
@@ -271,18 +272,18 @@ Note that tag check violations on loads must always be reported synchronously.
 set in page table entry and memory tagging is enabled from *envcfg CSR,
 following rules apply:
 
- 1) tag checks are enforced on load/stores to such pages. See <<TAG_CHECKS>>
+ 1. tag checks are enforced on load/stores to such pages. See <<TAG_CHECKS>>
     for further checks. Underlying tagged page must be idempotent memory else
     tag look up for referenced virtual memory will result in load access-fault
     exception.
 
- 2) fetched instructions from pages with `MTAG=1` do not generate checked loads
+ 2. fetched instructions from pages with `MTAG=1` do not generate checked loads
     and stores. This doesn't have any impact on behavior of `settag`, `gentag`
     and `addtag` instructions.
 
- 3) If both rule 2 and rule 1 are applying, rule 2 takes precedence.
+ 3. If both rule 2 and rule 1 are applying, rule 2 takes precedence.
 
- 4) An instruction crossing a page boundary with differing `MTAG` value,
+ 4. An instruction crossing a page boundary with differing `MTAG` value,
     common denominator of `MTAG=0` applies for such instruction.
 
 `MTAG` bit in page table entry remains a reserved bit if `XWR == 111` or
