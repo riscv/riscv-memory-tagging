@@ -399,6 +399,7 @@ The Zimte extension adds the `MTE_MODE` field (bit 34:2) to `mseccfg`. When the
 M-mode.
 
 When `MTE_MODE` is `0b00`, the following rules apply to M-mode:
+
 * Zimte instructions will revert to their behavior as defined by Zimop.
 
 ==== Machine Environment Configuration Register (`menvcfg`)
