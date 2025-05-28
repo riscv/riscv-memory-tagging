@@ -18,9 +18,10 @@ DOCS := \
 DATE ?= $(shell date +%Y-%m-%d)
 VERSION ?= v0.0.0
 REVMARK ?= Draft
-DOCKER_IMG := riscvintl/riscv-docs-base-container-image:latest
+DOCKER_IMG := docker.io/riscvintl/riscv-docs-base-container-image:latest
+DOCKER_BIN ?= docker
 ifneq ($(SKIP_DOCKER),true)
-	DOCKER_CMD := docker run --rm -v ${PWD}:/build -w /build \
+	DOCKER_CMD := ${DOCKER_BIN} run --rm -v ${PWD}:/build -w /build \
 	${DOCKER_IMG} \
 	/bin/sh -c
 	DOCKER_QUOTE := "
@@ -67,7 +68,7 @@ vpath %.adoc $(SRC_DIR)
 
 build:
 	@echo "Checking if Docker is available..."
-	@if command -v docker >/dev/null 2>&1 ; then \
+	@if command -v ${DOCKER_BIN} >/dev/null 2>&1 ; then \
 		echo "Docker is available, building inside Docker container..."; \
 		$(MAKE) build-container; \
 	else \
@@ -87,7 +88,7 @@ build-no-container:
 
 # Update docker image to latest
 docker-pull-latest:
-	docker pull ${DOCKER_IMG}
+	${DOCKER_BIN} pull ${DOCKER_IMG}
 
 clean:
 	@echo "Cleaning up generated files..."
