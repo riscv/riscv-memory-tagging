@@ -68,9 +68,12 @@ memory and if tags do not match then it is due to a memory safety bug in
 program.
 
 Existing software mechanisms using compiler assisted software instrumentation
-and runtime support exist (address sanitizer aka ASan) cite:[ASAN]. However
-software approach has significant cost from performance perspective and are
-mostly limited to unit test, developer test or special test harness (like
+and runtime support exist:
+* HWAddressSanitizer (HWAsan) cite:[HWASAN] which uses pointer-masking.
+* AddressSanitizer (ASan) cite:[ASAN] which is fully implemented in software.
+
+However software approach has significant cost from performance perspective and
+are mostly limited to unit test, developer test or special test harness (like
 fuzzing) environments. Hardware assistance in management and checking of `tags`
 on memory accesses helps in more scalable testing of software in variety of
 deployment scenarios including production.
