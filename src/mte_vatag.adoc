@@ -61,7 +61,7 @@ privileged CSRs.
 
 .Privileged tag base address CSRs
 [width=100%]
-[%header, cols="^4,^12"]
+[%header, cols="^2,^4"]
 |===
 |Privilege level | CSR
 |  U             | `svittu`
@@ -88,11 +88,11 @@ defined as below
 
 .Lowest and highest virtual addresses
 [width=100%]
-[%header, cols="^4,^12"]
+[%header, cols="^3,^14,^14"]
 |===
 |Privilege level | LOWEST_VADDR_CURR_PRIV | HIGHEST_VADDR_CURR_PRIV
-|  U             | 0                      | 2 ^ (VADDR_BITS) - 1
-|  S / HS / VS   | 2 ^ (VADDR_BITS)       | 2 ^ (VADDR_BITS) OR (2 ^ (VADDR_BITS) - 1)
+|  U             | 0                      | 2 ^ (VADDR_BITS - 1) - 1
+|  S / HS / VS   | 2 ^ (VADDR_BITS - 1)   | 2 ^ (VADDR_BITS) - 1
 |  M             | 0                      | `Impl. defined`
 |===
 
