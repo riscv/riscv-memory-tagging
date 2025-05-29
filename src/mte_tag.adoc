@@ -19,6 +19,37 @@ extension may not be implemented or may not be enabled for a workload,
 instruction encodings for memory tagging are taken from zimop cite:[ZIMOP]
 encoding and thus make memory tagging extension dependent on zimop.
 
+== Taxonomy for loads and stores
+
+`Zimte` introduces new type of loads and stores to the hart and enforces tag
+checks on certain loads and stores. Following terminologies are defined for
+better clarity and will be used in the rest of the specification.
+
+=== Regular load and regular store operations
+Load and store operating on a page with permissions `--R`, `X-R`, `-WR` and
+`XWR` are termed as a `regular load` and `regular store`. Regular load and
+regular store memory operations are generated from an instruction (except
+`settag`) defined by ISA to perform memory accesses.
+
+=== Checked load and store
+Regular load and store which is subject to tag check is termed as checked load
+and store (or checked memory access)
+
+=== Unchecked load and store
+Regular load and store which is not subject to tag check is termed as unchecked
+load and store (unchecked memory access).
+
+=== Load tag and store tag operations
+`load tag` operation is a load of tag from tag storage as defined by Svatag or
+Smvatag extensions. `store tag` operation is a store of tag to tag storage as
+defined by Svatag or Smvatag extensions. `load tag` operation requires
+permission for tag storage memory to be --R while `store tag` operation
+require permission to be -WR.
+
+Checked loads and stores shall generate load tag operation in order to fetch
+the tag for the memory chunk. `settag` instruction may generate a load tag
+followed by a store tag memory operation.
+
 === Tag widths
 
 Width of the `pointer_tag` (hereafter `pointer_tag_width`) can be 4 bit or 7
@@ -133,13 +164,14 @@ based and thus #chunk_count = 0 means first chunk and #chunk_count = 15 means
 
 [NOTE]
 ====
-Load tag operation is omitted from extension definition because its not
-needed. Situations where load tag is required deemed to be not performance
+REMOVEME: after development phase of spec is done.
+`gettag` operation is omitted from extension definition because its not
+needed. Situations where `gettag` is required deemed to be not performance
 critical paths. Furthermore, if software desires to read tag in these non-
 performance critical paths, it can do so by creating an alternate read-only
 mapping of tag storage with the help of supervisor software.
 
-Since extension is still in development phase, if load tag operation is
+Since extension is still in development phase, if `gettag` operation is
 required by software, it can be added.
 ====
 
@@ -147,9 +179,10 @@ required by software, it can be added.
 
 If memory tagging is enabled in the current execution environment (see
 <<MEM_TAG_EN>>), `settag` instruction creates a `mc_tag` =
-`rs1[XLEN:XLEN-pointer_tag_width+1]` and stores `mc_tag(s)` for consecutive
-memory chunks encoded by `chunk_count` starting with the first memory chunk
-calculated from virtual address specified in `rs1`.
+`rs1[XLEN:XLEN-pointer_tag_width+1]` and generate a `store tag` memory
+operation with store data = `mc_tag(s)` for consecutive memory chunks encoded
+by `chunk_count` starting with the first memory chunk calculated from virtual
+address specified in `rs1`.
 
 If memory tagging is disabled in the current execution environment (see
 <<MEM_TAG_EN>>), then `settag` instruction falls back to zimop behavior and
@@ -179,20 +212,21 @@ width of tag store operation can be 128 bit wide (each memory chunk needs 8 bit
 and maximum possible chunks are 16. 8x16 = 128 bit).
 ====
 
-`settag` may end being a read, modify and then write operation on the
-memory region defined by Svatag extension and there are no atomicity
-requirements on the implementation. If atomicity is desired then it is
-software's responsibility.
+Depending on width of `mc_tag`, `settag` may end up being a read, modify and
+then write operation on the memory region defined by Svatag extension. There
+are no atomicity requirements on the implementation for `settag` instruction.
+If atomicity is desired for `store tag` operation then it is software's
+responsibility using existing mechanisms.
 
 `settag` can generate store operations larger than maximum store width
 supported by implementation and implementation may choose to split it
-into multiple stores with no ordering requirements or dependencies among
-splitted stores.
+into multiple stores which follows hart's memory consistency model. There are
+no ordering requirements or dependencies among splitted stores.
 
 ===== Memory ordering requirement
 
-A memory access (load or store) to some virtual address `va` can not bypass
-the older store initiated by `settag rs1=va`.
+A regular memory access (regular load or regular store) to some virtual address
+`va` can not bypass the older store initiated by `settag rs1=va`.
 
 This specification defines tag as the entity associated to virtual addresses.
 In case of aliasing (multiple virtual addresses map to same physical address),
@@ -213,35 +247,35 @@ locating tag is unaligned. Tag storage memory must be idempotent memory else
 
 ==== M-mode
 If memory tagging is enabled in M-mode (see <<MEM_TAG_EN>>), all regular loads
-and stores are subject to memory tagging checks.
+and regular stores are subject to memory tagging checks.
 
 ==== Less than M-mode
 If memory tagging is enabled in the current execution environment (see
-<<MEM_TAG_EN>>) and `satp.MODE == Bare`, then all loads and stores are subject
-to tag checks.
+<<MEM_TAG_EN>>) and `satp.MODE == Bare`, then all regular loads and regular
+stores are subject to tag checks.
 
 If memory tagging is enabled in the current execution environment and
-`satp.MODE != Bare`, then only loads/stores belonging to pages marked as tagged
-page (see <<TAGGED_PAGE>>) in the first stage page table are subject to memory
-tagging checks.
+`satp.MODE != Bare`, then a regular load and regular store is subject to tag
+checks only if the page is marked as a tagged page (see <<TAGGED_PAGE>>) in the
+first stage page table.
 
 ==== tag checks
-Once a load/store is determined (after paging bit checks and *envcfg control
-bit checks) to be subject to memory tagging checks, following further checks
-are performed
+Once a regular load/store is determined (after paging bit checks and *envcfg
+control bit checks) to be subject to memory tagging checks, following further
+checks are performed
 
 * All stack pointer (sp/x2) relative accesses are not checked for tags (see
   notes).
 
 * If hart is in `TAG_CHECK_ELIDE` state (see <<TAGCHECK_ELIDE>>), then tag
-  checks are completely elided on that memory access.
+  checks are elided on that memory access.
 
 * Hart evaluates expression `mc_tag == pointer_tag` and if false then hart
   raises a software check exception with tval = 4.
 
-If a load / store is subject to tag checks, fetching `mc_tag` from the tag
-memory region holding tags may also result in a load page fault or load access
-fault and thus the hart report the virtual address of the tag in `xtval`.
+While performing tag check on a regular load/store, fetching `mc_tag` from the
+tag memory region holding tags may also result in a load page fault or load
+access fault and hart reports the virtual address of the tag in `xtval`.
 
 [NOTE]
 =====
@@ -254,13 +288,14 @@ subject to tag checks.
 === Asynchronous reporting for tag mismatches
 
 To improve performance, software check exceptions due to tag mismatches on
-stores can be reported asynchronously. This means that reported `epc` might not
-be the reason for tag mismatch and software must do additional analysis to
-infer which store resulted in software check exception. This behavior is can
-be optionally turned on through `__x__envcfg` CSR for next less privilege mode
-(see <<MEMTAG_CSR_CTRL>>).
+regular stores can be reported asynchronously. This means that reported `epc`
+might not be the reason for tag mismatch and software must do additional
+analysis to infer which store resulted in software check exception. This
+behavior can be optionally turned on through `__x__envcfg` CSR for next
+less privilege mode (see <<MEMTAG_CSR_CTRL>>).
 
-Note that tag check violations on loads must always be reported synchronously.
+Note that tag check violations on regular loads must always be reported
+synchronously.
 
 [[TAGGED_PAGE]]
 === Tag checks on page basis
@@ -269,14 +304,15 @@ Note that tag check violations on loads must always be reported synchronously.
 set in page table entry and memory tagging is enabled from *envcfg CSR,
 following rules apply:
 
- 1. tag checks are enforced on load/stores to such pages. See <<TAG_CHECKS>>
-    for further checks. Underlying tagged page must be idempotent memory else
-    tag look up for referenced virtual memory will result in load access-fault
-    exception.
+ 1. tag checks are enforced on regular load/store to such page (tagged data
+    page). See <<TAG_CHECKS>> for further checks. Underlying tagged page must
+    be an idempotent memory else tag look up for referenced virtual memory will
+    result in load access-fault exception.
 
- 2. fetched instructions from pages with `MTAG=1` do not generate checked loads
-    and stores. This doesn't have any impact on behavior of `settag`, `gentag`
-    and `addtag` instructions.
+ 2. fetched instructions from a code page with `MTAG=1` (tag-exempt code page)
+    generate unchecked load and store. This doesn't have any impact on behavior
+    of `settag`, `gentag` and `addtag` instructions. Instruction `nietc` falls
+    back to zimop behavior.
 
  3. If both rule 2 and rule 1 are applying, rule 2 takes precedence.
 
@@ -292,25 +328,25 @@ page fault of original access type.
 
 [NOTE]
 ====
-`MTAG` bit on data pages allows an software to opt into selected memory regions
-for checked loads and stores. Furthermore, `MTAG` bit on executable pages
-allows software to opt out certain code regions from being subject to checked
-loads and stores. From usability point of view, having loads and stores don't
-make sense for shadow stack pages or self modifying code. Thus `MTAG` bit is
+`MTAG` bit on data pages allows software to opt into selected memory regions
+to generate checked loads and stores. Furthermore, `MTAG` bit on executable
+pages allows software to opt out certain code regions from being subject to
+checked loads and stores. From usability point of view, shadow stack memory
+accesses or self modifying code do not need `MTAG` bit. Thus `MTAG` bit is
 kept as reserved for such page table encodings.
 ====
 
 [[TAGCHECK_ELIDE]]
 === tag check elide state
 
-Certain memory accesses can be elided for tag checks if software (compiler) can
-statically determine that they are safe to access. One such situation is
-function locals where compiler can statically determine that memory access is
-not out of bounds or out of scope. Although pointers to function locals passed
-to another function will require tag checks. Thus page tables will mark such
-pages tagged page. To help software elide tag checks on tagged pages, `Zimte`
-introduces a new hart state `transient tag check disable` (TTCD) state and is
-defined as below:
+Certain regular load or store can be elided for tag checks if software
+(compiler) can statically determine that they are safe to access. One such
+situation is function locals where compiler can statically determine that
+memory access is not out of bounds or out of scope. Although pointers to
+function locals passed to another function will require tag checks. Thus page
+tables will mark such pages as tagged data page. To help software elide tag
+checks on tagged pages, `Zimte` introduces a new hart state `transient tag
+check disable` (TTCD) state and is defined as below:
 
 * 0 - `TAG_CHECK_ENFORCED` - If memory tagging is enabled, tag checks enforced.
 * 1 - `TAG_CHECK_ELIDE` - If memory tagging is enabled, tag checks elided.
@@ -318,10 +354,10 @@ defined as below:
 `Zimte` defines a new instruction `nietc` short for next instruction elide tag
 check(s). Encoding for `nietc` is taken from `C.MOP.3`, thus making `Zimte`
 dependent on `C` and `Zcmop` extensions. If memory tagging is enabled, then
-instruction `nietc` sets `TTCD` to `TAG_CHECK_ELIDE` state. A subsequent memory
-load or store clears `TTCD` to `TAG_CHECK_ENFORCED. Thus any memory accesses
-originating from subsequent instruction can be elided for tag checks and re-arms
-the hart to check for tags thereafter.
+instruction `nietc` sets `TTCD` to `TAG_CHECK_ELIDE` state. A subsequent
+regular memory load or store clears `TTCD` to `TAG_CHECK_ENFORCED. Thus any
+regular load or store originating from subsequent instruction can be elided
+for tag checks and re-arms the hart to check for tags thereafter.
 
 [NOTE]
 =====
