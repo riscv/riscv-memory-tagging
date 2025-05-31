@@ -20,13 +20,13 @@ formula
 
   mc_tag_va = VITT_BASE + BIT_TO_BYTE((va >> 4) * mc_tag_width)
 
-When load/stores are performed on a virtual address `va` with tag checks (see
-<<TAG_CHECKS>>) enforced then hart performs tag look up by performing a load
-on `mc_tag_va` for the corresponding `va` and extracts `mc_tag` from the loaded
-value at the virtual address `mc_tag_va`.
+When a regular load/store is performed on a virtual address `va` with tag
+checks (see <<TAG_CHECKS>>) enforced then hart performs tag look up by
+performing a load tag operation on `mc_tag_va` for the corresponding `va` and
+extracts `mc_tag` from the loaded value at the virtual address `mc_tag_va`.
 
-Tag loads as part of tag look up can raise load page fault on `mc_tag_va`, if
-it doesn't have read permissions in page tables.
+Tag loads are part of tag look up and can raise load page fault on `mc_tag_va`,
+if it doesn't have read permissions in page tables.
 
 [NOTE]
 ====
@@ -41,8 +41,8 @@ virtual address `va` (see <<TAG_STORE>>) and memory tagging is enabled for
 current execution environment, then hart performs tag store by performing
 a store on `mc_tag_va` for the corresponding `va`.
 
-Tag stores as part of `settag` can raise store page fault on `mc_tag_va`
-address, if it doesn't have write permissions in page tables.
+Tag stores are generated from `settag` and can raise store page fault on
+`mc_tag_va` address, if it doesn't have write permissions in page tables.
 
 [NOTE]
 ====
