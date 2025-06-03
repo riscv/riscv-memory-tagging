@@ -336,6 +336,13 @@ accesses or self modifying code do not need `MTAG` bit. Thus `MTAG` bit is
 kept as reserved for such page table encodings.
 ====
 
+[NOTE]
+====
+Cache Management Operations (CMOs) must respect and take into account memory tagging extension. Otherwise, serious security problems can appear, including:
+
+* CBO.ZERO may work as a STORE operation. If memory tagging is not respected, it would be possible to write to memory bypassing the tag enforcement.
+====
+
 [[TAGCHECK_ELIDE]]
 === tag check elide state
 
