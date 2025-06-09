@@ -88,6 +88,6 @@ deployment scenarios including production.
 
 Leveraging this software usage model, the `Zimte` extension defines a mechanism
 for tagged pointer construction, tag management instructions to store tags and
-tag checks on memory accesses (pointer dereferences). `Svatag` extension
-defines that `tag` is stored in virtual memory along with protection mechanisms
-for tag storage.
+tag checks on memory accesses (pointer dereferences). `Svatag` and `Smvatag`
+extensions defines tag storage mechanism in virtual memory along with protection
+mechanisms for tag storage.
