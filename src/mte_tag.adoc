@@ -378,9 +378,9 @@ In M-mode, enable for memory tagging is controlled via `mseccfg` CSR.
 Enablement for privilege modes less than M-mode is controlled through
 `__x__envcfg` CSR. Zimte adds two bits termed as `MTE_MODE` to `__x__envcfg`
 CSR which controls enabling of memory tagging and `pointer_tag_width` for the
-next privilege mode. A `MT_ASYNC` bit is added to `__x__envcfg` CSR and if set,
-software check exceptions due to tag mismatches on store operations can be
-reported asynchronously (see <<ASYNC_SW_CHECK>>).
+next privilege mode. A `MT_ASYNC` bit (bit 36) is added to `__x__envcfg` CSR
+and if set, software check exceptions due to tag mismatches on store operations
+can be reported asynchronously (see <<ASYNC_SW_CHECK>>).
 
 [[MEM_TAG_EN]]
 ==== Memory tagging enable and pointer_tag_width
@@ -431,7 +431,7 @@ configuration
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension adds the `MTE_MODE` field (bit 34:2) to `mseccfg`. When the
+The Zimte extension adds the `MTE_MODE` field (bit 35:34) to `mseccfg`. When the
 `MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 M-mode.
 
@@ -463,7 +463,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to M-mode:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension adds the `MTE_MODE` field (bit 34:2) to `menvcfg`. When the
+The Zimte extension adds the `MTE_MODE` field (bit 35:34) to `menvcfg`. When the
 `MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 HS/S-mode.
 
@@ -491,7 +491,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to HS/S-mode:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension adds the `MTE_MODE` field (bit 34:2) to `senvcfg`. When the
+The Zimte extension adds the `MTE_MODE` field (bit 35:34) to `senvcfg`. When the
 `MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 VU/U-mode.
 
@@ -523,7 +523,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to VU/U-mode:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension adds the `MTE_MODE` field (bit 34:2) to `henvcfg`. When the
+The Zimte extension adds the `MTE_MODE` field (bit 35:34) to `henvcfg`. When the
 `MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 VS-mode.
 
