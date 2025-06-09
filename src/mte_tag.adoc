@@ -144,7 +144,7 @@ zeroes destination register.
 addtag instruction can be used by the compiler for generating distinct pointer
 tags derived from a base tag (base tag obtained via gentag). Compiler can use
 this mechanism to assign different tags (with same base tag) for consecutive
-objects on stack and mitigate adjacent overflow bugs. This also helps with
+objects on stack and help catch adjacent overflow bugs. This also helps with
 language runtime during events like exception unwind to calculate tags for
 objects on stack in a deterministic manner.
 
@@ -213,10 +213,10 @@ and maximum possible chunks are 16. 8x16 = 128 bit).
 ====
 
 Depending on width of `mc_tag`, `settag` may end up being a read, modify and
-then write operation on the memory region defined by Svatag extension. There
-are no atomicity requirements on the implementation for `settag` instruction.
-If atomicity is desired for `store tag` operation then it is software's
-responsibility using existing mechanisms.
+then write operation on the memory region defined by Svatag and Smvatag
+extensions. There are no atomicity requirements on the implementation for
+`settag` instruction. If atomicity is desired for `store tag` operation then it
+is software's responsibility using existing mechanisms.
 
 `settag` can generate store operations larger than maximum store width
 supported by implementation and implementation may choose to split it
@@ -226,7 +226,7 @@ no ordering requirements or dependencies among splitted stores.
 ===== Memory ordering requirement
 
 A regular memory access (regular load or regular store) to some virtual address
-`va` can not bypass the older store initiated by `settag rs1=va`.
+`va` can not bypass the older store tag initiated by `settag rs1=va`.
 
 This specification defines tag as the entity associated to virtual addresses.
 In case of aliasing (multiple virtual addresses map to same physical address),
@@ -273,9 +273,10 @@ checks are performed
 * Hart evaluates expression `mc_tag == pointer_tag` and if false then hart
   raises a software check exception with tval = 4.
 
-While performing tag check on a regular load/store, fetching `mc_tag` from the
-tag memory region holding tags may also result in a load page fault or load
-access fault and hart reports the virtual address of the tag in `xtval`.
+While performing tag check on a regular load/store, fetching (load tag
+operation) `mc_tag` from the tag memory region holding tags may also result in
+a load page fault or load access fault and hart reports the virtual address of
+the tag in `xtval`.
 
 [NOTE]
 =====
@@ -320,7 +321,7 @@ following rules apply:
     common denominator of `MTAG=0` applies for such instruction.
 
 `MTAG` bit in page table entry remains a reserved bit if `XWR == 111` or
-`XWR == `010` and if set, will raise a page fault of original access type.
+`XWR == 010` and if set, will raise a page fault of original access type.
 
 If memory tagging is not enabled for the execution environment via *envcfg CSR,
 then `MTAG` bit in page table entry remains a reserved and if set will raise a
