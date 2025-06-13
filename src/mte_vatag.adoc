@@ -93,16 +93,15 @@ defined as below
 |Privilege level | LOWEST_VADDR_CURR_PRIV | HIGHEST_VADDR_CURR_PRIV
 |  U             | 0                      | 2 ^ (VADDR_BITS - 1) - 1
 |  S / HS / VS   | 2 ^ (VADDR_BITS - 1)   | 2 ^ (VADDR_BITS) - 1
-|  M             | 0                      | `Impl. defined`
+|  M             | `Impl. defined`        | `Impl. defined`
 |===
 
 VADDR_BITS is virtual addressing bits. VADDR_BITS can be 39, 48 or 57
 depending on Sv39, Sv48 or Sv57 virtual addressing mode in `satp` CSR.
+In bare mode and M-mode, LOWEST_VADDR_CURR_PRIV and HIGHEST_VADDR_CURR_PRIV
+are implementation defined.
 
 `Svatag` depends on `Svukte` extension and thus assumes an even split in
 address space between user and supervisor with user address space spanning
 from zero to maxium positive address while supervisor address space spanning
 from minimum negative value to maximum negative value.
-
-Lowest virtual address in M-mode is defined to be 0 and highest virtual address
-for M-mode is implementation dependent.
