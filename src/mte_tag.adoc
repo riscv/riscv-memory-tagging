@@ -86,7 +86,7 @@ contain the code size growth.
 
 Following are the instructions to place `pointer_tag` in the source register
 
-==== Generate a tag - gentag rd, rs1
+==== Generate a tag - gentag rd
 
 If memory tagging is enabled in the current execution environment (see
 <<MEM_TAG_EN>>), hart clears `rd`, generates a `pointer_tag` value and places
