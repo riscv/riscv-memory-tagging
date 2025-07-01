@@ -26,7 +26,7 @@ formula
 |===
 |`mc_tag_width` | `mc_tag_va`
 |4              | `VITT_BASE + (va >> 5)`
-|8              | `VITT_BASE + (va >> 3)`
+|8              | `VITT_BASE + (va >> 4)`
 |===
 
 When a regular load/store is performed on a virtual address `va` with tag
