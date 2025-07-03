@@ -337,6 +337,14 @@ accesses or self modifying code do not need `MTAG` bit. Thus `MTAG` bit is
 kept as reserved for such page table encodings.
 ====
 
+[NOTE]
+====
+The memory tagging extension is based on the Pointer Masking extension and
+follows the same rules for memory access. For further information, see section
+24.2.6 of the privilege specification: Memory Accesses Subject to Pointer
+Masking.
+====
+
 [[TAGCHECK_ELIDE]]
 === tag check elide state
 
