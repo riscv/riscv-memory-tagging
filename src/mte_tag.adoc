@@ -339,9 +339,10 @@ kept as reserved for such page table encodings.
 
 [NOTE]
 ====
-Cache Management Operations (CMOs) must respect and take into account memory tagging extension. Otherwise, serious security problems can appear, including:
-
-* CBO.ZERO may work as a STORE operation. If memory tagging is not respected, it would be possible to write to memory bypassing the tag enforcement.
+The memory tagging extension is based on the Pointer Masking extension and
+follows the same rules for memory access. For further information, see section
+24.2.6 of the privilege specification: Memory Accesses Subject to Pointer
+Masking.
 ====
 
 [[TAGCHECK_ELIDE]]
