@@ -1,14 +1,15 @@
 [[virtualtag]]
-== Virtually indexed tag storage (Svatag)
+== Virtually indexed tag storage (Svatag and Smvatag)
 
-Svatag extension defines that tag storage for memory chunks (`mc`) as defined
-by Zimte (see <<tagging>>) extension is in virtual address
-space of execution environment. Tag storage can be viewed as a large array
-(hereafter referred to as virtually indexed tag table or VITT) of the tags
-(`mc_tag`) with each tag width = `mc_tag_width` (see
-<<tagging>> for `mc_tag` and `mc_tag_width`). Base virtual
-address of this large array is determined differently depending on privilege
-mode (see <<VIRT_TAG_BASE_CSR>>) and hereafter referred as `__x__VITT_BASE`.
+Svatag (for S/HS/VS/U/VU) and Smvatag (for M) extensions defines that tag
+storage and tag lookups for memory chunks (`mc`) as defined by Zimte (see
+<<tagging>>) extension is in virtual address space of execution environment.
+Tag storage can be viewed as a large array (hereafter referred to as
+virtually indexed tag table or VITT) of the tags (`mc_tag`) with each tag
+width = `mc_tag_width` (see <<tagging>> for `mc_tag` and `mc_tag_width`).
+Base virtual address of this large array is determined differently depending
+on privilege mode (see <<VIRT_TAG_BASE_CSR>>) and hereafter referred as
+`__x__VITT_BASE`.
 
 [[VIRT_TAG_LOOKUP]]
 === Tag look up in virtually indexed tag table
@@ -19,13 +20,13 @@ formula
 
   mc_tag_va = VITT_BASE + BIT_TO_BYTE((va >> 4) * mc_tag_width)
 
-When load/stores are performed on a virtual address `va` with tag checks (see
-<<TAG_CHECKS>>) enforced then hart performs tag look up by performing a load
-on `mc_tag_va` for the corresponding `va` and extracts `mc_tag` from the loaded
-value at the virtual address `mc_tag_va`.
+When a regular load/store is performed on a virtual address `va` with tag
+checks (see <<TAG_CHECKS>>) enforced then hart performs tag look up by
+performing a load tag operation on `mc_tag_va` for the corresponding `va` and
+extracts `mc_tag` from the loaded value at the virtual address `mc_tag_va`.
 
-Tag loads as part of tag look up can raise load page fault on `mc_tag_va`, if
-it doesn't have read permissions in page tables.
+Tag loads are part of tag look up and can raise load page fault on `mc_tag_va`,
+if it doesn't have read permissions in page tables.
 
 [NOTE]
 ====
@@ -35,12 +36,12 @@ requires masking and shifting of bits after the value is loaded from
 `mc_tag_va`.
 ====
 
-When `settag` or `setinvtag` instructions are executed for memory chunks(s)
-starting at the virtual address `va` (see <<TAG_STORE>>) and memory tagging is
-enabled for current execution environment, then hart performs tag store by
-performing a store on `mc_tag_va` for the corresponding `va`.
+When `settag` instruction is executed for memory chunks(s) starting at the
+virtual address `va` (see <<TAG_STORE>>) and memory tagging is enabled for
+current execution environment, then hart performs tag store by performing
+a store on `mc_tag_va` for the corresponding `va`.
 
-Tag stores as part of `settag/setinvtag` can raise store page fault on
+Tag stores are generated from `settag` and can raise store page fault on
 `mc_tag_va` address, if it doesn't have write permissions in page tables.
 
 [NOTE]
@@ -60,7 +61,7 @@ privileged CSRs.
 
 .Privileged tag base address CSRs
 [width=100%]
-[%header, cols="^4,^12"]
+[%header, cols="^2,^4"]
 |===
 |Privilege level | CSR
 |  U             | `svittu`
@@ -69,11 +70,16 @@ privileged CSRs.
 |  M             | `mvitt`
 |===
 
+`Svatag` defines the `svittu`, `svitts` and `vsvitts` CSRs while `Smvatag`
+defines `mvitt`.
+
 [[TAG_MEM_PROTECTION]]
 === Protection of tag storage
 
 Hart must raise access faults on regular loads and stores to virtual addresses
-spanning VITT range. VITT range is defined as below
+spanning VITT range. Hart must also raise access fault on `settag` instruction
+if the memory chunk specified in `rs1` overlaps with VITT range. VITT range is
+defined as below
 
   tag_memory_region_start = mc_tag_va(LOWEST_VADDR_CURR_PRIV)
   tag_memory_region_end = mc_tag_va(HIGHEST_VADDR_CURR_PRIV)
@@ -82,21 +88,20 @@ spanning VITT range. VITT range is defined as below
 
 .Lowest and highest virtual addresses
 [width=100%]
-[%header, cols="^4,^12"]
+[%header, cols="^3,^14,^14"]
 |===
 |Privilege level | LOWEST_VADDR_CURR_PRIV | HIGHEST_VADDR_CURR_PRIV
-|  U             | 0                      | 2 ^ (VADDR_BITS) - 1
-|  S / HS / VS   | 2 ^ (VADDR_BITS)       | 2 ^ (VADDR_BITS) OR (2 ^ (VADDR_BITS) - 1)
-|  M             | 0                      | `Impl. defined`
+|  U             | 0                      | 2 ^ (VADDR_BITS - 1) - 1
+|  S / HS / VS   | 2 ^ (VADDR_BITS - 1)   | 2 ^ (VADDR_BITS) - 1
+|  M             | `Impl. defined`        | `Impl. defined`
 |===
 
 VADDR_BITS is virtual addressing bits. VADDR_BITS can be 39, 48 or 57
 depending on Sv39, Sv48 or Sv57 virtual addressing mode in `satp` CSR.
+In bare mode and M-mode, LOWEST_VADDR_CURR_PRIV and HIGHEST_VADDR_CURR_PRIV
+are implementation defined.
 
-`Svatag` assumes an even split in address space between user and supervisor
-with user address space spanning from zero to maxium positive address while
-supervisor address space spanning from minimum negative value to maximum
-negative value.
-
-Lowest virtual address in M-mode is defined to be 0 and highest virtual address
-for M-mode is implementation dependent.
+`Svatag` depends on `Svukte` extension and thus assumes an even split in
+address space between user and supervisor with user address space spanning
+from zero to maxium positive address while supervisor address space spanning
+from minimum negative value to maximum negative value.

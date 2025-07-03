@@ -1,5 +1,7 @@
 == Contributors
 
-This RISC-V specification has been contributed to directly or indirectly by:
+This RISC-V specification has been contributed to directly or indirectly by (in alphabetical order):
 
 [%hardbreaks]
+
+Adam Zabrocki, Alvin Che-Chia Chang, Andrew Waterman, Brendan Sweeney, Christoph Müllner, David Weaver, Deepak Gupta, Earl Killian, Florian Mayer, Luís Fiolhais, Martin Maas, Nick Kossifidis, Radim Krčmář, Ravi Sahita, Robbin Ehn, Samuel Holland, Siqi Zhao, Thurston Dang, Vedvyas Shanbhogue
