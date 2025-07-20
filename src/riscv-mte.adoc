@@ -71,6 +71,7 @@ include::contributors.adoc[]
 include::mte_intro.adoc[]
 include::mte_tag.adoc[]
 include::mte_vatag.adoc[]
+include::mte_tagelide.adoc[]
 
 // The index must precede the bibliography
 include::index.adoc[]
