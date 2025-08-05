@@ -2,7 +2,7 @@
 == Virtually indexed tag storage (Svatag and Smvatag)
 
 Svatag (for S/HS/VS/U/VU) and Smvatag (for M) extensions defines that tag
-storage and tag lookups for memory chunks (`mc`) as defined by Zimte (see
+storage and tag lookups for memory chunks (`mc`) as defined by Zimt (see
 <<tagging>>) extension is in virtual address space of execution environment.
 Tag storage can be viewed as a large array (hereafter referred to as
 virtually indexed tag table or VITT) of the tags (`mc_tag`) with each tag

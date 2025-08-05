@@ -86,7 +86,7 @@ fuzzing) environments. Hardware assistance in management and checking of `tags`
 on memory accesses helps in more scalable testing of software in variety of
 deployment scenarios including production.
 
-Leveraging this software usage model, the `Zimte` extension defines a mechanism
+Leveraging this software usage model, the `Zimt` extension defines a mechanism
 for tagged pointer construction, tag management instructions to store tags and
 tag checks on memory accesses (pointer dereferences). `Svatag` and `Smvatag`
 extensions defines tag storage mechanism in virtual memory along with protection
