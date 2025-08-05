@@ -19,6 +19,12 @@ extension may not be implemented or may not be enabled for a workload,
 instruction encodings for memory tagging are taken from zimop cite:[ZIMOP]
 encoding and thus make memory tagging extension dependent on zimop.
 
+[NOTE]
+The memory tagging extension is based on the Pointer Masking extension and
+follows the same rules for memory access. For further information, see section
+24.2.6 of the privilege specification: Memory Accesses Subject to Pointer
+Masking.
+
 === Taxonomy for loads and stores
 
 `Zimte` introduces new type of loads and stores to the hart and enforces tag
