@@ -245,6 +245,13 @@ locating tag is unaligned. Tag storage memory must be idempotent memory else
 [[TAG_CHECKS]]
 === tag checks and privilege modes
 
+If memory tagging is enabled for the execution environment, then memory tagging
+checks are performed by extracting `pointer_tag` from the input pointer and
+comparing `pointer_tag` against `mc_tag` associated with memory chunk for the
+respective address. If the effective address range of a load/store spans
+multiple memory chunks, the applicability of memory tag checks is determined
+separately for each memory chunk.
+
 ==== M-mode
 If memory tagging is enabled in M-mode (see <<MEM_TAG_EN>>), all regular loads
 and regular stores are subject to memory tagging checks.
@@ -313,8 +320,8 @@ following rules apply:
 
  3. If both rule 2 and rule 1 are applying, rule 2 takes precedence.
 
- 4. An instruction crossing a page boundary with differing `MTAG` value,
-    common denominator of `MTAG=0` applies for such instruction.
+ 4. An instruction crossing a page boundary with differing `MTAG` value, the
+    instruction behaves as if it was fetched from a page with MTAG=0.
 
 `MTAG` bit in page table entry remains a reserved bit if `XWR == 111` or
 `XWR == 010` and if set, will raise a page fault of original access type.
