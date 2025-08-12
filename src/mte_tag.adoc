@@ -1,7 +1,7 @@
 [[tagging]]
-== Memory tagging extension (Zimte)
+== Memory tagging extension (Zimt)
 
-The Zimte extension divides address space of the program in equal memory chunks
+The Zimt extension divides address space of the program in equal memory chunks
 of 16 bytes (hereafter `mc`). Each `mc` in address space can be associated with
 a tag (hereafter `mc_tag`) by software and `mc_tag` for `mc` is stored in
 memory defined by extension Svatag (see <<virtualtag>>).
@@ -9,7 +9,7 @@ memory defined by extension Svatag (see <<virtualtag>>).
 Software (runtime memory allocator or compiler) that constructs pointers to
 access memory (and thus memory chunks) is expected to place a tag (hereafter
 `pointer_tag`) in high unused bits of the pointer as defined by the pointer
-masking extensions cite:[PMASKING]. Thus `Zimte` depends on the pointer masking
+masking extensions cite:[PMASKING]. Thus `Zimt` depends on the pointer masking
 extension and is applicable to only for XLEN=64. Pointer masking has to be
 enabled as a requirement for memory tagging to be enabled in the execution
 environment.
@@ -27,7 +27,7 @@ Masking.
 
 === Taxonomy for loads and stores
 
-`Zimte` introduces new type of loads and stores to the hart and enforces tag
+`Zimt` introduces new type of loads and stores to the hart and enforces tag
 checks on certain loads and stores. Following terminologies are defined for
 better clarity and will be used in the rest of the specification.
 
@@ -75,7 +75,7 @@ describes valid configurations of `pointer_tag_width` and `mc_tag_width`.
 
 === Tag placement in pointer
 
-Zimte defines following instructions to annotate a pointer with `pointer_tag`
+Zimt defines following instructions to annotate a pointer with `pointer_tag`
 and perform arithmetics on `pointer_tag` in a tagged pointer. Placement and
 arithmetics on `pointer_tag` are performed in-place in masked bits (as defined
 by pointer masking extension) starting at b63. Instructions introduced to
@@ -160,7 +160,7 @@ See Appendix for example how this can be used by codegen.
 [[TAG_STORE]]
 === set tag(s) for memory chunk(s)
 
-Zimte defines an instruction to store tag (i.e. `pointer_tag`) value(s) for
+Zimt defines an instruction to store tag (i.e. `pointer_tag`) value(s) for
 consecutive 1 to 16 memory chunk(s). Base address of the first memory chunk is
 calculated by doing `rs1 & (~0xF)`. Count of memory chunk is encoded as 4 bit
 immediate (#chunk_count) in the instruction. This instruction is encoded using
@@ -304,7 +304,7 @@ synchronously.
 [[TAGGED_PAGE]]
 === Tag checks on page basis
 
-`Zimte` introduces `memory tag` (`MTAG`) bit in first stage page table which if
+`Zimt` introduces `memory tag` (`MTAG`) bit in first stage page table which if
 set in page table entry and memory tagging is enabled from *envcfg CSR,
 following rules apply:
 
@@ -345,7 +345,7 @@ kept as reserved for such page table encodings.
 In M-mode, enable for memory tagging is controlled via `mseccfg` CSR.
 
 Enablement for privilege modes less than M-mode is controlled through
-`__x__envcfg` CSR. Zimte adds two bits termed as `MTE_MODE` to `__x__envcfg`
+`__x__envcfg` CSR. Zimt adds two bits termed as `MTE_MODE` to `__x__envcfg`
 CSR which controls enabling of memory tagging and `pointer_tag_width` for the
 next privilege mode. A `MT_ASYNC` bit (bit 36) is added to `__x__envcfg` CSR
 and if set, software check exceptions due to tag mismatches on store operations
@@ -400,13 +400,13 @@ configuration
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension adds the `MTE_MODE` field (bit 35:34) to `mseccfg`. When the
+The Zimt extension adds the `MTE_MODE` field (bit 35:34) to `mseccfg`. When the
 `MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 M-mode.
 
 When `MTE_MODE` is `0b00`, the following rules apply to M-mode:
 
-* Zimte instructions will revert to their behavior as defined by Zimop.
+* Zimt instructions will revert to their behavior as defined by Zimop.
 
 ==== Machine Environment Configuration Register (`menvcfg`)
 
@@ -432,13 +432,13 @@ When `MTE_MODE` is `0b00`, the following rules apply to M-mode:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension adds the `MTE_MODE` field (bit 35:34) to `menvcfg`. When the
+The Zimt extension adds the `MTE_MODE` field (bit 35:34) to `menvcfg`. When the
 `MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 HS/S-mode.
 
 When `MTE_MODE` is `0b00`, the following rules apply to HS/S-mode:
 
-* Zimte instructions will revert to their behavior as defined by Zimop.
+* Zimt instructions will revert to their behavior as defined by Zimop.
 
 ==== Supervisor Environment Configuration Register (`senvcfg`)
 
@@ -460,13 +460,13 @@ When `MTE_MODE` is `0b00`, the following rules apply to HS/S-mode:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension adds the `MTE_MODE` field (bit 35:34) to `senvcfg`. When the
+The Zimt extension adds the `MTE_MODE` field (bit 35:34) to `senvcfg`. When the
 `MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 VU/U-mode.
 
 When `MTE_MODE` is `0b00`, the following rules apply to VU/U-mode:
 
-* Zimte instructions will revert to their behavior as defined by Zimop.
+* Zimt instructions will revert to their behavior as defined by Zimop.
 
 ==== Hypervisor Environment Configuration Register (`henvcfg`)
 
@@ -492,13 +492,13 @@ When `MTE_MODE` is `0b00`, the following rules apply to VU/U-mode:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension adds the `MTE_MODE` field (bit 35:34) to `henvcfg`. When the
+The Zimt extension adds the `MTE_MODE` field (bit 35:34) to `henvcfg`. When the
 `MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 VS-mode.
 
 When `MTE_MODE` is `0b00`, the following rules apply to VS-mode:
 
-* Zimte instructions will revert to their behavior as defined by Zimop.
+* Zimt instructions will revert to their behavior as defined by Zimop.
 
 <<<
 

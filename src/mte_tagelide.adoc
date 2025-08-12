@@ -2,7 +2,7 @@
 == tag check elide extension
 
 `Zitagelide` is defined to aid software to elide tag checks on memory accesses
-on a tagged page, and is dependent on `Zimte`, `C` and `Zcmop` extensions.
+on a tagged page, and is dependent on `Zimt`, `C` and `Zcmop` extensions.
 
 Certain regular load or store can be elided for tag checks if software
 (compiler) can statically determine that they are safe to access. One such
@@ -17,7 +17,7 @@ check disable` (TTCD) state and is defined as below:
 * 1 - `TAG_CHECK_ELIDE` - If memory tagging is enabled, tag checks elided.
 
 `Zitagelide` defines a new instruction `nietc` short for next instruction elide
-tag check(s). Encoding for `nietc` is taken from `C.MOP.3`, thus making `Zimte`
+tag check(s). Encoding for `nietc` is taken from `C.MOP.3`, thus making `Zimt`
 dependent on `C` and `Zcmop` extensions. If memory tagging is enabled, then
 instruction `nietc` sets `TTCD` to `TAG_CHECK_ELIDE` state. A subsequent
 regular memory load or store clears `TTCD` to `TAG_CHECK_ENFORCED`. Thus any
@@ -83,7 +83,7 @@ in *status register is defined as below.
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension introduces the `SPTTCD` (bit 24) and `MPTTCD` (bit 42)
+The Zimt extension introduces the `SPTTCD` (bit 24) and `MPTTCD` (bit 42)
 fields that hold the previous `TTCD`. The `__x__PTTCD` fields are encoded as
 follows:
 
@@ -123,7 +123,7 @@ is cleared.
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-Access to the `SPTTCD` field introduced by Zimte accesses the homonymous
+Access to the `SPTTCD` field introduced by Zimt accesses the homonymous
 fields of `mstatus` when `V=0` and the homonymous fields of `vsstatus`
 when `V=1`.
 
@@ -159,7 +159,7 @@ On a sret, SPTTCD is restored into hart's `TTCD` and SPTTCD is cleared.
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimte extension introduces the `SPTTCD` (bit 24) field that hold the
+The Zimt extension introduces the `SPTTCD` (bit 24) field that hold the
 previous `TTCD`. The SPTTCD fields is encoded as follows:
 
 * 0 - `TAG_CHECK_ENFORCED` - If memory tagging is enabled, tag checks enforced.
