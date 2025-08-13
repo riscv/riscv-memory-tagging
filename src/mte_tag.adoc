@@ -35,7 +35,7 @@ better clarity and will be used in the rest of the specification.
 Load and store operating on a page with permissions `--R`, `X-R`, `-WR` and
 `XWR` are termed as a `regular load` and `regular store`. Regular load and
 regular store memory operations are generated from an instruction (except
-`settag`) defined by ISA to perform memory accesses.
+`settag` and `checktag`) defined by ISA to perform memory accesses.
 
 ==== Checked load and store
 Regular load and store which is subject to tag check is termed as checked load
@@ -294,6 +294,33 @@ As much as possible, compiler uses stack pointer (x2) to access stack objects
 local to a function. These accesses are deemed to be safe and thus are not
 subject to tag checks.
 =====
+
+==== Explicit tag check
+Zimt defines an explicit tag check instruction taken from `MOP.RR.1` of zimop
+extension, `checktag rs1, #chunk_count`. If memory tagging is disabled in the
+execution environment then `checktag` instruction reverts to zimop behavior. If
+memory tagging is enabled in the execution environment then `checktag`
+instruction extracts `pointer_tag` from `rs1` and performs load tag operation
+for memory chunks (count = `#chunk_count`) starting at virtual address `rs1`.
+If any of the loaded `mc_tag` value(s) mismatches with the `pointer_tag`
+specified in `rs1`, then software check exception is raised with tval = 4. If
+memory tagging is enabled in the execution environment then `checktag`
+instruction always makes the check irrespective of `PTE.MTAG` bit setting for
+the code page from where `checktag` instuction is fetched or for data page
+virtual address specified in `rs1`.
+
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  7, name: 'opcode', attr:'SYSTEM'},
+  {bits:  5, name: 'rd', attr:['00000']},
+  {bits:  3, name: 'funct3', attr:['100']},
+  {bits:  5, name: 'rs1', attr:['tagged_pointer']},
+  {bits:  4, name: 'tag_imm4', attr:['chunk_count']},
+  {bits:  1, name: '0', attr:['0']},
+  {bits:  7, name: '1000011', attr:['gentag']},
+], config:{lanes: 1, hspace:1024}}
+....
 
 [[ASYNC_SW_CHECK]]
 === Asynchronous reporting for tag mismatches
