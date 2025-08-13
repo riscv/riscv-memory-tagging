@@ -352,7 +352,7 @@ kept as reserved for such page table encodings.
 In M-mode, enable for memory tagging is controlled via `mseccfg` CSR.
 
 Enablement for privilege modes less than M-mode is controlled through
-`__x__envcfg` CSR. Zimt adds two bits termed as `MTE_MODE` to `__x__envcfg`
+`__x__envcfg` CSR. Zimt adds two bits termed as `MT_MODE` to `__x__envcfg`
 CSR which controls enabling of memory tagging and `pointer_tag_width` for the
 next privilege mode. A `MT_ASYNC` bit (bit 36) is added to `__x__envcfg` CSR
 and if set, software check exceptions due to tag mismatches on store operations
@@ -361,17 +361,17 @@ can be reported asynchronously (see <<ASYNC_SW_CHECK>>).
 [[MEM_TAG_EN]]
 ==== Memory tagging enable and pointer_tag_width
 
-The term `xMTE_MODE` is used to determine if memory tagging is enabled in
+The term `xMT_MODE` is used to determine if memory tagging is enabled in
 current execution environment (privilege mode).
 
-Following table describes different encodings of `MTE_MODE` and corresponding
+Following table describes different encodings of `MT_MODE` and corresponding
 configuration
 
-.`MTE_MODE` encoding and its meaning
+.`MT_MODE` encoding and its meaning
 [width=100%]
 [%header, cols="^4,^12"]
 |===
-|`MTE_MODE` | Memory tagging state
+|`MT_MODE` | Memory tagging state
 |  00       | Disabled
 |  01       | Reserved
 |  10       | Enabled, pointer_tag_width = 4
@@ -380,11 +380,11 @@ configuration
 
   If memory tagging is implemented, implementation must implement
   `pointer_tag_width = 4` at minimum. To discover maximum supported
-  `pointer_tag_width`, software can write `0b11` to `MTE_MODE` field in the
+  `pointer_tag_width`, software can write `0b11` to `MT_MODE` field in the
   `__x__envcfg` CSR and read it back. If read back value is `0b11` then
   implementation supports both `pointer_tag` widths.
 
-  If xMTE_MODE == 0b00 then xMTE_MODE.MT_ASYNC becomes WPRI
+  If xMT_MODE == 0b00 then xenvcfg.MT_ASYNC becomes WPRI
 
 ==== Machine Security Configuration Register(`mseccfg`)
 
@@ -401,17 +401,17 @@ configuration
   {bits:  1, name: 'MLPE'},
   {bits: 21, name: 'WPRI'},
   {bits:  2, name: 'PMM'},
-  {bits:  2, name: 'MTE_MODE'},
+  {bits:  2, name: 'MT_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
   {bits: 27, name: 'WPRI'},
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimt extension adds the `MTE_MODE` field (bit 35:34) to `mseccfg`. When the
-`MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
+The Zimt extension adds the `MT_MODE` field (bit 35:34) to `mseccfg`. When the
+`MT_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 M-mode.
 
-When `MTE_MODE` is `0b00`, the following rules apply to M-mode:
+When `MT_MODE` is `0b00`, the following rules apply to M-mode:
 
 * Zimt instructions will revert to their behavior as defined by Zimop.
 
@@ -429,7 +429,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to M-mode:
   {bits:  1, name: 'CBZE'},
   {bits: 24, name: 'WPRI'},
   {bits:  2, name: 'PMM'},
-  {bits:  2, name: 'MTE_MODE'},
+  {bits:  2, name: 'MT_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
   {bits: 23, name: 'WPRI'},
   {bits:  1, name: 'CDE'},
@@ -439,11 +439,11 @@ When `MTE_MODE` is `0b00`, the following rules apply to M-mode:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimt extension adds the `MTE_MODE` field (bit 35:34) to `menvcfg`. When the
-`MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
+The Zimt extension adds the `MT_MODE` field (bit 35:34) to `menvcfg`. When the
+`MT_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 HS/S-mode.
 
-When `MTE_MODE` is `0b00`, the following rules apply to HS/S-mode:
+When `MT_MODE` is `0b00`, the following rules apply to HS/S-mode:
 
 * Zimt instructions will revert to their behavior as defined by Zimop.
 
@@ -461,17 +461,17 @@ When `MTE_MODE` is `0b00`, the following rules apply to HS/S-mode:
   {bits:  1, name: 'CBZE'},
   {bits: 24, name: 'WPRI'},
   {bits:  2, name: 'PMM'},
-  {bits:  2, name: 'MTE_MODE'},
+  {bits:  2, name: 'MT_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
   {bits: 27, name: 'WPRI'},
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimt extension adds the `MTE_MODE` field (bit 35:34) to `senvcfg`. When the
-`MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
+The Zimt extension adds the `MT_MODE` field (bit 35:34) to `senvcfg`. When the
+`MT_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 VU/U-mode.
 
-When `MTE_MODE` is `0b00`, the following rules apply to VU/U-mode:
+When `MT_MODE` is `0b00`, the following rules apply to VU/U-mode:
 
 * Zimt instructions will revert to their behavior as defined by Zimop.
 
@@ -489,7 +489,7 @@ When `MTE_MODE` is `0b00`, the following rules apply to VU/U-mode:
   {bits:  1, name: 'CBZE'},
   {bits: 24, name: 'WPRI'},
   {bits:  2, name: 'PMM'},
-  {bits:  2, name: 'MTE_MODE'},
+  {bits:  2, name: 'MT_MODE'},
   {bits:  1, name: 'MT_ASYNC'},
   {bits: 23, name: 'WPRI'},
   {bits:  1, name: 'CDE'},
@@ -499,11 +499,11 @@ When `MTE_MODE` is `0b00`, the following rules apply to VU/U-mode:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimt extension adds the `MTE_MODE` field (bit 35:34) to `henvcfg`. When the
-`MTE_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
+The Zimt extension adds the `MT_MODE` field (bit 35:34) to `henvcfg`. When the
+`MT_MODE` field is set to `0b10` or `0b11`, memory tagging is enabled for
 VS-mode.
 
-When `MTE_MODE` is `0b00`, the following rules apply to VS-mode:
+When `MT_MODE` is `0b00`, the following rules apply to VS-mode:
 
 * Zimt instructions will revert to their behavior as defined by Zimop.
 
