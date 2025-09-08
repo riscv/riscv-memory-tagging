@@ -41,8 +41,6 @@ lifetime depends on the region of memory it is stored on:
   on process startup (or when the dynamic object is loaded). Generally, the
   storage for globals is destroyed on process shutdown (depending on the OS,
   `dlclose` might cause it to be destoyed earlier).
-  The lifetime of a global ends when the process is terminated, or the dynamic
-  object is unloaded.
 
 In addition, an object has a size that represents the amount of memory
 allocated for it, and except for reassignment, a pointer must always point to
