@@ -249,7 +249,7 @@ aliased virtual address.
 ===== Exceptions
 
 `settag` can raise store page fault or access fault depending on how tag
-storage is oragnized. If implementation doesn't support misaligned accesses,
+storage is organized. If implementation doesn't support misaligned accesses,
 `settag` instruction can raise misaligned exception if calculated address for
 locating tag is unaligned. Tag storage memory must be idempotent memory else
 `settag` raise store/AMO access-fault exception.
