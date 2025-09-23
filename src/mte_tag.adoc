@@ -21,9 +21,10 @@ encoding and thus make memory tagging extension dependent on zimop.
 
 A memory tag (`mc_tag`) can be up to 8 bits wide. Thus, depending on memory
 chunk counts, a `load tag` or `store tag` (see taxonomy for loads and stores)
-may trigger a misaligned memory access exception (e.g by performing a 2-byte
-tag access on an odd address boundary). An implementation can avoid penalty for
-such misaligned tag accesses by implementing the Zicclsm extension.
+operation can be a misaligned access (e.g by performing a 2-byte tag access on
+an odd address boundary) and such operations must not raise misaligned
+exception. An implementation implementing Zicclsm extension may get this
+behavior implicitly.
 
 [NOTE]
 The memory tagging extension is based on the Pointer Masking extension and
