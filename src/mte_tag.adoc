@@ -108,6 +108,9 @@ If memory tagging is disabled in the current execution environment (see
 <<MEM_TAG_EN>>), then `gentag` instruction falls back to zimop behavior and zeroes
 destination register.
 
+Even though entropy space is small, implementation must ensure that generated tag
+is pseudorandom and is uniformly distributed across all invocations of `gentag`.
+
 [wavedrom, ,svg]
 ....
 {reg: [
