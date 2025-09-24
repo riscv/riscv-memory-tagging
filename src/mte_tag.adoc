@@ -325,7 +325,7 @@ virtual address specified in `rs1`.
   {bits:  5, name: 'rs1', attr:['tagged_pointer']},
   {bits:  4, name: 'tag_imm4', attr:['chunk_count']},
   {bits:  1, name: '0', attr:['0']},
-  {bits:  7, name: '1000011', attr:['gentag']},
+  {bits:  7, name: '1000011', attr:['checktag']},
 ], config:{lanes: 1, hspace:1024}}
 ....
 
