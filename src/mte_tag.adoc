@@ -287,7 +287,8 @@ checks are performed
   notes).
 
 * Hart evaluates expression `mc_tag == pointer_tag` and if false then hart
-  raises a software check exception with tval = 4.
+  raises a software check exception with tval = 4 and stval2/htval2/mtval3 (see
+  <<TVAL_3>>) = virtual address of regular load/store.
 
 While performing tag check on a regular load/store, fetching (load tag
 operation) `mc_tag` from the tag memory region holding tags may also result in
@@ -309,8 +310,9 @@ memory tagging is enabled in the execution environment then `checktag`
 instruction extracts `pointer_tag` from `rs1` and performs load tag operation
 for memory chunks (count = `#chunk_count`) starting at virtual address `rs1`.
 If any of the loaded `mc_tag` value(s) mismatches with the `pointer_tag`
-specified in `rs1`, then software check exception is raised with tval = 4. If
-memory tagging is enabled in the execution environment then `checktag`
+specified in `rs1`, then software check exception is raised with tval = 4 and
+stval2/htval2/mtval3 (see <<TVAL_3>>) = virtual address of regular load/store.
+If memory tagging is enabled in the execution environment then `checktag`
 instruction always makes the check irrespective of `PTE.MTAG` bit setting for
 the code page from where `checktag` instuction is fetched or for data page
 virtual address specified in `rs1`.
@@ -331,15 +333,25 @@ virtual address specified in `rs1`.
 [[ASYNC_SW_CHECK]]
 === Asynchronous reporting for tag mismatches
 
-To improve performance, software check exceptions due to tag mismatches on
-regular stores can be reported asynchronously. This means that reported `epc`
-might not be the reason for tag mismatch and software must do additional
-analysis to infer which store resulted in software check exception. This
-behavior can be optionally turned on through `__x__envcfg` CSR for next
-less privilege mode (see <<MEMTAG_CSR_CTRL>>).
+To improve performance, tag mismatches on regular stores can be reported
+asynchronously. This means that reported `epc` might not be the reason for tag
+mismatch and software must do additional analysis to infer which PC of the
+store resulting in tag mismatch. This behavior can be optionally turned on
+through `__x__envcfg.MT_ASYNC` CSR for next less privilege mode (see
+<<MEMTAG_CSR_CTRL>>). In asynchronous mode, an implementation can report tag
+mismatch on the delivery of next trap (interrupt or exception). If a tag
+mismatch happened, then hart sets stval2/htval2/mtval3 with the virtual
+address of regular load or store resulting in tag mismatch. If there are
+multiple tag matches in the machine, hart must always report the tag mismatch
+in program order.
 
+[NOTE]
+====
 Note that tag check violations on regular loads must always be reported
-synchronously.
+synchronously. When running in asynchronous mode, implementation must ensure
+that all the pending tag checks in hart must be resolved before trap entry
+and trap return events.
+====
 
 [[TAGGED_PAGE]]
 === Tag checks on page basis
@@ -380,6 +392,13 @@ kept as reserved for such page table encodings.
 ====
 
 [[MEMTAG_CSR_CTRL]]
+[[TVAL_3]]
+=== Faulting virtual address for mismatched tag
+Zimt extension extends privileged specification with stval2, htval2 and mtval3
+CSR to S, H and M mode respectively. On a tag mismatch and subsequent trap
+(asynchronous or synchronous mode), respective CSR holds the virtual address
+resulting in tag mismatch.
+
 === CSR bits for memory tagging
 
 In M-mode, enable for memory tagging is controlled via `mseccfg` CSR.
