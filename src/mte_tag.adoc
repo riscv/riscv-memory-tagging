@@ -426,8 +426,26 @@ can be reported asynchronously (see <<ASYNC_SW_CHECK>>).
 [[MEM_TAG_EN]]
 ==== Memory tagging enable and pointer_tag_width
 
-The term `xMT_MODE` is used to determine if memory tagging is enabled in
-current execution environment (privilege mode).
+The term `xMT_MODE` for effective privilege is used to determine if memory
+tagging is enabled on memory accesses. In some cases like hypervisor load and
+store instructions (HLV*/HSV*), effective privilege will be different from
+underlying execution environment privilege. Following table determines source
+for `xMT_MODE` depending on effective privilege.
+
+.`xMT_MODE` source
+[width=100%]
+[%header, cols="^4,^12"]
+|===
+|`Privilege`     | Memory tagging state
+|  M             | mseccfg.MT_MODE
+|  S/HS          | menvcfg.MT_MODE
+|  U/HU          | senvcfg.MT_MODE
+|  VS            | henvcfg.MT_MODE
+|  VU            | senvcfg.MT_MODE
+|  VS(HLV*/HSV*) | henvcfg.MT_MODE
+|  VU(HLV*/HSV* in HS) | senvcfg.MT_MODE
+|  VU(HLV*/HSV* in HU) | hstatus.VUMT_MODE
+|===
 
 Following table describes different encodings of `MT_MODE` and corresponding
 configuration
