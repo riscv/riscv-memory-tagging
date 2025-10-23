@@ -76,11 +76,12 @@ privileged CSRs.
 |  U             | `svittu`
 |  S / HS        | `svitts`
 |  VS            | `vsvitts`
+|  VU            | `vsvittu`
 |  M             | `mvitt`
 |===
 
-`Svatag` defines the `svittu`, `svitts` and `vsvitts` CSRs while `Smvatag`
-defines `mvitt`.
+`Svatag` defines the `svittu`, `svitts`, `vsvittu`` and `vsvitts` CSRs while
+`Smvatag` defines `mvitt`.
 
 [[TAG_MEM_PROTECTION]]
 === Protection of tag storage
@@ -114,3 +115,6 @@ are implementation defined.
 address space between user and supervisor with user address space spanning
 from zero to maxium positive address while supervisor address space spanning
 from minimum negative value to maximum negative value.
+
+HLV* and HSV* instructions use `vsvittu` or `vsvitts` as base of the tag table
+depending on if `hstatus.SPVP=0` or `hstatus.SPVP=1`, respectively.
