@@ -380,11 +380,12 @@ tables is ignored.
 [[HYPERVISOR_LDST]]
 === Memory tagging and hypervisor memory accesses
 
-HLVX* instructions always generate unchecked loads. HLV*/HSV* instructions in
-HS and HU mode may generate checked accesses depending on effective privilege
-of VS or VU (as defined in privileged specification). Memory accesses generated
-from HLV*/HSV* instructions in HU mode may generate checked accesses when
-`hstatus.HU` is set.
+HLVX* instructions always generate unchecked loads.
+
+If `hstatus.MTAG_I` is set, then HLV*/HSV* instructions do not generate
+checked accesses. If `hstatus.MTAG_I` is clear, then HLV*/HSV* instructions
+in HS and HU mode may generate checked accesses depending on effective privilege
+of VS or VU (as defined in privileged specification).
 
 `xMT_MODE` (see <<MEM_TAG_EN>>) for HLV* and HSV* instructions is defined based
 on the effective privilege of VS or VU (as defined in privileged specification),
@@ -400,8 +401,24 @@ memory accesses based on rules specified by paging bit `MTAG` in first stage
 page tables (see <<TAGGED_PAGE>>).
 
 If HLV*/HSV* instructions result in a tag mismatch, software check exception is
-delivered to HS mode with tval = 4 and hstatus.GVA set. In case of tag mismatch,
-software check exception is always delivered synchronously.
+delivered to HS mode with tval = 4 and hstatus.GVA set.
+
+[[MPRV_LDST]]
+=== Memory tagging on loads/stores affected by Modify Privilege bit (MPRV)
+
+If MPRV=1 and `mstatus.MTAG_I` is set, then load and store instructions
+generate unchecked accesses. If MPRV=1 and `mstatus.MTAG_I` is clear, then
+load and store instructions may generate checked accesses depending on
+effective privilege. `xMT_MODE` is selected based on effective privilege (see
+<<MEM_TAG_EN>>).
+
+If page based virtual memory is enabled for effective privilege and memory
+tagging is enabled for effective privilege, then checked accesses are generated
+based on rules specified by paging bit `MTAG` in first stage page tables (see
+<<TAGGED_PAGE>>).
+
+In case of a tag mismatch, software check exception is delivered to M mode with
+tval = 4.
 
 [[MEMTAG_CSR_CTRL]]
 === CSR bits for memory tagging
@@ -574,6 +591,52 @@ When `MT_MODE` is `0b00`, the following rules apply to VS-mode:
 
 * Zimt instructions will revert to their behavior as defined by Zimop.
 
+==== Machine Status Register (`mstatus`)
+
+.Machine-mode status register (`mstatus`) for RV64
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SIE'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'MIE'},
+  {bits:  1, name: 'WPRI'},
+  {bits:  1, name: 'SPIE'},
+  {bits:  1, name: 'UBE'},
+  {bits:  1, name: 'MPIE'},
+  {bits:  1, name: 'SPP'},
+  {bits:  2, name: 'VS[1:0]'},
+  {bits:  2, name: 'MPP[1:0]'},
+  {bits:  2, name: 'FS[1:0]'},
+  {bits:  2, name: 'XS[1:0]'},
+  {bits:  1, name: 'MPRV'},
+  {bits:  1, name: 'SUM'},
+  {bits:  1, name: 'MXR'},
+  {bits:  1, name: 'TVM'},
+  {bits:  1, name: 'TW'},
+  {bits:  1, name: 'TSR'},
+  {bits:  1, name: 'SPELP'},
+  {bits:  1, name: 'SDT'},
+  {bits:  7, name: 'WPRI'},
+  {bits:  2, name: 'UXL[1:0]'},
+  {bits:  2, name: 'SXL[1:0]'},
+  {bits:  1, name: 'SBE'},
+  {bits:  1, name: 'MBE'},
+  {bits:  1, name: 'GVA'},
+  {bits:  1, name: 'MPV'},
+  {bits:  1, name: 'MTAG_I'},
+  {bits:  1, name: 'MPELP'},
+  {bits:  1, name: 'MDT'},
+  {bits: 20, name: 'WPRI'},
+  {bits:  1, name: 'SD'},
+], config:{lanes: 4, hspace:1024}}
+....
+
+The Zimt extension adds `MTAG_I` bit to `mstatus`. When a trap is taken to
+M-mode and `mtinst` is written with nonzero value, then MTAG bit for code page
+of trapping instruction is deposited in `mstatus.MTAG_I`.
+
 ==== Hypervisor Status Register (`hstatus`)
 
 .Hypervisor status register (`hstatus`)
@@ -586,7 +649,8 @@ When `MT_MODE` is `0b00`, the following rules apply to VS-mode:
   {bits:  1, name: 'SPV'},
   {bits:  1, name: 'SPVP'},
   {bits:  1, name: 'HU'},
-  {bits:  2, name: 'WPRI'},
+  {bits:  1, name: 'MTAG_I'},
+  {bits:  1, name: 'WPRI'},
   {bits:  6, name: 'VGEIN'},
   {bits:  2, name: 'WPRI'},
   {bits:  1, name: 'VTVM'},
@@ -601,9 +665,12 @@ When `MT_MODE` is `0b00`, the following rules apply to VS-mode:
 ], config:{lanes: 4, hspace:1024}}
 ....
 
-The Zimt extension adds `VUMT_MODE` (bit 51:50) to `hstatus`. When the `HU`
-field is set, HLV*/HSV* may generate checked accesses in HU mode. `VUMT_MODE`
-selects the `xMT_MODE` if effective privilege mode is VU.
+The Zimt extension adds `VUMT_MODE` (bit 51:50) to `hstatus`. `VUMT_MODE`
+selects the `xMT_MODE` if execution environment is HU mode and effective
+privilege mode is VU. `hstatus.MTAG_I` bit emulates `MTAG` bit for
+instruction fetch from code page. When a trap is taken to HS mode and `htinst`
+is written with nonzero value, then VS-stage page table's MTAG bit on code page
+for trapping instruction is deposited in `hstatus.MTAG_I`.
 
 <<<
 
