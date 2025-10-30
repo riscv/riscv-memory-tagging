@@ -332,19 +332,6 @@ virtual address specified in `rs1`.
 ], config:{lanes: 1, hspace:1024}}
 ....
 
-[[ASYNC_SW_CHECK]]
-=== Asynchronous reporting for tag mismatches
-
-To improve performance, software check exceptions due to tag mismatches on
-regular stores can be reported asynchronously. This means that reported `epc`
-might not be the reason for tag mismatch and software must do additional
-analysis to infer which store resulted in software check exception. This
-behavior can be optionally turned on through `__x__envcfg` CSR for next
-less privilege mode (see <<MEMTAG_CSR_CTRL>>).
-
-Note that tag check violations on regular loads must always be reported
-synchronously.
-
 [[TAGGED_PAGE]]
 === Tag checks on page basis
 
@@ -423,9 +410,7 @@ In M-mode, enable for memory tagging is controlled via `mseccfg` CSR.
 Enablement for privilege modes less than M-mode is controlled through
 `__x__envcfg` CSR. Zimt adds two bits termed as `MT_MODE` to `__x__envcfg`
 CSR which controls enabling of memory tagging and `pointer_tag_width` for the
-next privilege mode. A `MT_ASYNC` bit (bit 36) is added to `__x__envcfg` CSR
-and if set, software check exceptions due to tag mismatches on store operations
-can be reported asynchronously (see <<ASYNC_SW_CHECK>>).
+next privilege mode.
 
 [[MEM_TAG_EN]]
 ==== Memory tagging enable and pointer_tag_width
@@ -471,8 +456,6 @@ configuration
   `__x__envcfg` CSR and read it back. If read back value is `0b11` then
   implementation supports both `pointer_tag` widths.
 
-  If xMT_MODE == 0b00 then xenvcfg.MT_ASYNC becomes WPRI
-
 ==== Machine Security Configuration Register(`mseccfg`)
 
 .Machine security configuration register(`mseccfg`)
@@ -489,8 +472,7 @@ configuration
   {bits: 21, name: 'WPRI'},
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MT_MODE'},
-  {bits:  1, name: 'MT_ASYNC'},
-  {bits: 27, name: 'WPRI'},
+  {bits: 28, name: 'WPRI'},
 ], config:{lanes: 4, hspace:1024}}
 ....
 
@@ -517,8 +499,7 @@ When `MT_MODE` is `0b00`, the following rules apply to M-mode:
   {bits: 24, name: 'WPRI'},
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MT_MODE'},
-  {bits:  1, name: 'MT_ASYNC'},
-  {bits: 23, name: 'WPRI'},
+  {bits: 24, name: 'WPRI'},
   {bits:  1, name: 'CDE'},
   {bits:  1, name: 'ADUE'},
   {bits:  1, name: 'PBMTE'},
@@ -549,8 +530,7 @@ When `MT_MODE` is `0b00`, the following rules apply to HS/S-mode:
   {bits: 24, name: 'WPRI'},
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MT_MODE'},
-  {bits:  1, name: 'MT_ASYNC'},
-  {bits: 27, name: 'WPRI'},
+  {bits: 28, name: 'WPRI'},
 ], config:{lanes: 4, hspace:1024}}
 ....
 
@@ -577,8 +557,7 @@ When `MT_MODE` is `0b00`, the following rules apply to VU/U-mode:
   {bits: 24, name: 'WPRI'},
   {bits:  2, name: 'PMM'},
   {bits:  2, name: 'MT_MODE'},
-  {bits:  1, name: 'MT_ASYNC'},
-  {bits: 23, name: 'WPRI'},
+  {bits: 24, name: 'WPRI'},
   {bits:  1, name: 'CDE'},
   {bits:  1, name: 'ADUE'},
   {bits:  1, name: 'PBMTE'},
