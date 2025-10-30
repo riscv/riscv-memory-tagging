@@ -352,22 +352,30 @@ synchronously.
 set in page table entry and memory tagging is enabled from *envcfg CSR,
 following rules apply:
 
- 1. tag checks are enforced on regular load/store to such page (tagged data
-    page). See <<TAG_CHECKS>> for further checks. Underlying tagged page must
-    be an idempotent memory else tag look up for referenced virtual memory will
-    result in load access-fault exception.
+ 1. load/store to a tagged data page generate checked accesses. A tagged data
+    page has `MTAG` bit set and `RWX` permission bits can be `100` or `110`.
+    See <<TAG_CHECKS>> for further checks. Underlying tagged page must be an
+    idempotent memory else tag look up for referenced virtual memory results in
+    load access-fault exception.
 
- 2. fetched instructions from a code page with `MTAG=1` (tag-exempt code page)
+ 2. load/store to a page marked as executable in first stage page table always
+    generate unchecked memory accesses.
+
+ 3. fetched instructions from a code page with `MTAG=1` (tag-exempt code page)
     generate unchecked load and store. This doesn't have any impact on behavior
     of `settag`, `gentag` and `addtag` instructions.
 
- 3. If both rule 2 and rule 1 are applying, rule 2 takes precedence.
+ 4. If both rule 3 and rule 1 are applying, rule 3 takes precedence.
 
- 4. An instruction crossing a page boundary with differing `MTAG` value, the
+ 5. An instruction crossing a page boundary with differing `MTAG` value, the
     instruction behaves as if it was fetched from a page with MTAG=0.
 
+ 6. load/store crossing page boundary with differing `MTAG` value assumes
+    MTAG=1 for both pages.
+
 `MTAG` bit in page table entry remains a reserved bit if `XWR == 111` or
-`XWR == 010` and if set, will raise a page fault of original access type.
+`XWR == 010` and if set, will raise a page access-fault of original access
+type.
 
 If memory tagging is not enabled for the execution environment via *envcfg CSR,
 then `MTAG` bit in page table entry remains a reserved and if set will raise a
