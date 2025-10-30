@@ -279,8 +279,8 @@ stores are subject to tag checks.
 
 If memory tagging is enabled in the current execution environment and
 `satp.MODE != Bare`, then a regular load and regular store is subject to tag
-checks only if the page is marked as a tagged page (see <<TAGGED_PAGE>>) in the
-first stage page table.
+checks only if the data page is a tagged-data page and load/store instruction
+is on a tagcheck-exempt code page (see <<TAGGED_PAGE>>).
 
 ==== tag checks
 Once a regular load/store is determined (after paging bit checks and *envcfg
@@ -335,40 +335,41 @@ virtual address specified in `rs1`.
 [[TAGGED_PAGE]]
 === Tag checks on page basis
 
-`Zimt` introduces `memory tag` (`MTAG`) bit in first stage page table which if
-set in page table entry and memory tagging is enabled from *envcfg CSR,
-following rules apply:
+`Zimt` introduces `memory tag` (`MTAG`) bit in first stage page table which
+defines "tagged-data page" and "tagcheck-exempt code page".
 
- 1. tag checks are enforced on regular load/store to such page (tagged data
-    page). See <<TAG_CHECKS>> for further checks. Underlying tagged page must
-    be an idempotent memory else tag look up for referenced virtual memory will
-    result in load access-fault exception.
+If paging is enabled, "tagged-data page" is a page translated using page tables
+with MTAG bit set and execute permission bit clear in first stage page tables.
+If paging is disabled and memory tagging is enabled for execution environment,
+then all data pages are "tagged-data page".
 
- 2. fetched instructions from a code page with `MTAG=1` (tag-exempt code page)
-    generate unchecked load and store. This doesn't have any impact on behavior
-    of `settag`, `gentag` and `addtag` instructions.
+If paging is enabled, a "tagcheck-exempt code page" is a page translated using
+page tables with MTAG bit set and execute permission bit set in first stage
+page tables. If paging is disabled then "tagcheck-exempt code page" are not
+applicable and do not exist.
 
- 3. If both rule 2 and rule 1 are applying, rule 2 takes precedence.
+If memory tagging is enabled for the execution environment from *envcfg CSR,
+following rules apply for checked memory accesses:
 
- 4. An instruction crossing a page boundary with differing `MTAG` value, the
-    instruction behaves as if it was fetched from a page with MTAG=0.
+ 1. Memory accesses to a page which is not a "tagged-data page" always generate
+    unchecked memory accesses.
 
-`MTAG` bit in page table entry remains a reserved bit if `XWR == 111` or
-`XWR == 010` and if set, will raise a page fault of original access type.
+ 2. Memory accesses to a "tagged-data page" may generate checked memory
+    accesses.
+
+ 3. Instructions fetched from "tagcheck-exempt code page" always generate
+    unchecked memory accesses.
+
+ 4. If both rule 3 and rule 2 are apply, rule 3 shall take precedence.
+
+ 5. An instruction straddling between "tagcheck-exempt code page" and normal
+    code page is assumed to be fetched from normal code page.
+
+ 6. A load/store straddling between "tagged-data page" and normal page is
+    assumed as "tagged-data page" for both pages.
 
 If memory tagging is not enabled for the execution environment via *envcfg CSR,
-then `MTAG` bit in page table entry remains a reserved and if set will raise a
-page fault of original access type.
-
-[NOTE]
-====
-`MTAG` bit on data pages allows software to opt into selected memory regions
-to generate checked loads and stores. Furthermore, `MTAG` bit on executable
-pages allows software to opt out certain code regions from being subject to
-checked loads and stores. From usability point of view, shadow stack memory
-accesses or self modifying code do not need `MTAG` bit. Thus `MTAG` bit is
-kept as reserved for such page table encodings.
-====
+then `MTAG` bit in page table entry is ignored by hart.
 
 ==== Tag checks on supervisor accesses to user pages
 
