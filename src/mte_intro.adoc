@@ -89,7 +89,3 @@ for tagged pointer construction, tag management instructions to store tags and
 tag checks on memory accesses (pointer dereferences). `Svatag` and `Smvatag`
 extensions defines tag storage mechanism in virtual memory along with protection
 mechanisms for tag storage.
-
-Software (particularly compiler) has visiblity into lifecycle of pointers and
-can statically determine accesses to be safe in some reduced scope. To aid
-compiler from eliding such tag checks, `Zitagelide` is defined.
