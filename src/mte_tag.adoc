@@ -180,15 +180,9 @@ based and thus #chunk_count = 0 means first chunk and #chunk_count = 15 means
 
 [NOTE]
 ====
-REMOVEME: after development phase of spec is done.
-`gettag` operation is omitted from extension definition because its not
-needed. Situations where `gettag` is required deemed to be not performance
-critical paths. Furthermore, if software desires to read tag in these non-
-performance critical paths, it can do so by creating an alternate read-only
-mapping of tag storage with the help of supervisor software.
-
-Since extension is still in development phase, if `gettag` operation is
-required by software, it can be added.
+If software desires to read tag in these non-performance critical paths, it can
+do so by creating an alternate read-only mapping of tag storage with the help
+of supervisor software.
 ====
 
 ==== Store tag(s) for memory chunk(s): settag rs1, #chunk_count
