@@ -462,11 +462,11 @@ configuration
 |  11       | Enabled, pointer_tag_width = 7
 |===
 
-  If memory tagging is implemented, implementation must implement
-  `pointer_tag_width = 4` at minimum. To discover maximum supported
-  `pointer_tag_width`, software can write `0b11` to `MT_MODE` field in the
-  `__x__envcfg` CSR and read it back. If read back value is `0b11` then
-  implementation supports both `pointer_tag` widths.
+If memory tagging is implemented, implementation must implement
+`pointer_tag_width = 4` at minimum. To discover maximum supported
+`pointer_tag_width`, software can write `0b11` to `MT_MODE` field in the
+`__x__envcfg` CSR and read it back. If read back value is `0b11` then
+implementation supports both `pointer_tag` widths.
 
 ==== Machine Security Configuration Register(`mseccfg`)
 
