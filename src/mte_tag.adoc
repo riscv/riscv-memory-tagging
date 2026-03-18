@@ -691,6 +691,6 @@ for trapping instruction is deposited in `hstatus.MTAG_I`.
         settag s2, 1
         # [...] do things with s2 while in scope
         # scope of second object ends, tag back to zero
-        addi s2, sp, 16
+        addi s2, sp, 32
         settag s2, 1
 -----
