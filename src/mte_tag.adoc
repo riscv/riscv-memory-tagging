@@ -694,3 +694,33 @@ for trapping instruction is deposited in `hstatus.MTAG_I`.
         addi s2, sp, 32
         settag s2, 1
 -----
+
+==== Example: optimized stack tagging codegen
+
+If we know we are compiling for a target that implements Zimt, we can
+optimize the stack codegen to skip `or` when constructing pointers to
+objects.
+
+[listing]
+-----
+    function:
+        # N.B. sp remains untagged at all times
+        addi sp, sp, -512 # stack frame size of 512 bytes
+        gentag t0   # generate a pointer_tag in high bits of t0
+        or t0, sp, t0
+         :
+        # first object is tagged <random tag> + 1
+        addi s1, t0, 16
+        addtag s1, s1, 1  # tag_imm4 = 1
+         :
+        # second object is tagged <random tag> + 2
+        addi s2, t0, 32
+        addtag s2, s2, 2  # tag_imm4 = 2
+         :
+        # scope of second object starts, tag
+        settag s2, 1
+        # [...] do things with s2 while in scope
+        # scope of second object ends, tag back to zero
+        addi s2, sp, 32
+        settag s2, 1
+-----
