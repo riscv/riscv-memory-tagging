@@ -274,7 +274,7 @@ stores are subject to tag checks.
 If memory tagging is enabled in the current execution environment and
 `satp.MODE != Bare`, then a regular load and regular store is subject to tag
 checks only if the data page is a tagged-data page and load/store instruction
-is on a tagcheck-exempt code page (see <<TAGGED_PAGE>>).
+is not on a tagcheck-exempt code page (see <<TAGGED_PAGE>>).
 
 ==== tag checks
 Once a regular load/store is determined (after paging bit checks and *envcfg
