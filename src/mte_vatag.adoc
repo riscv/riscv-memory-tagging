@@ -118,3 +118,23 @@ from minimum negative value to maximum negative value.
 
 HLV* and HSV* instructions use `vsvittu` or `vsvitts` as base of the tag table
 depending on if `hstatus.SPVP=0` or `hstatus.SPVP=1`, respectively.
+
+[[TAG_MEM_PROTECTION]]
+=== Note on speculative execution
+
+RISC-V memory tagging is intended to provide probabilistic detection of
+memory-safety errors through tag checks on memory accesses. It does not assume
+that pointer tags or memory tags are confidential architectural secrets.
+
+Implementations may allow speculative execution to proceed before a tag check
+is fully resolved, provided that any failing checked access is handled
+according to the architectural exception rules before retirement.
+A speculative oracle that reveals whether a tag check would pass can reduce
+the probabilistic protection provided by tag guessing, but this is not, by
+itself, a violation of the memory-tagging model.
+
+Mitigation of speculative-execution side channels may be addressed by separate
+RISC-V mechanisms or task groups, such as speculation barriers, timing fences,
+or other platform-specific security extensions, and is not required as part of
+the memory-tagging extension itself. For more information on RISC-V's
+primitives to handle secure assets refer to the Security Model.
