@@ -233,6 +233,21 @@ supported by implementation and implementation may choose to split it
 into multiple stores which follows hart's memory consistency model. There are
 no ordering requirements or dependencies among splitted stores.
 
+===== Implementation optimizations
+
+Some software environments, such as M-mode firmware or tightly controlled
+embedded systems, may not need to preserve compatibility with implementations
+where memory tagging is not implemented or not enabled. In such environments,
+a combined operation that constructs a tagged pointer and stores the
+corresponding tag to tag storage could reduce code size or improve performance
+for common cases such as small stack allocations.
+
+This extension does not define separate non-Zimop encodings for such operations.
+An implementation can instead recognize common instruction sequences that
+construct a tagged pointer and then store the corresponding tag, and can fuse
+them internally using microarchitectural fusion, provided that the architectural
+behavior remains equivalent to executing the original instruction sequence.
+
 ===== Memory ordering requirement
 
 A regular memory access (regular load or regular store) to some virtual address
