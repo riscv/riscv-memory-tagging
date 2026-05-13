@@ -119,7 +119,6 @@ from minimum negative value to maximum negative value.
 HLV* and HSV* instructions use `vsvittu` or `vsvitts` as base of the tag table
 depending on if `hstatus.SPVP=0` or `hstatus.SPVP=1`, respectively.
 
-[[TAG_MEM_PROTECTION]]
 === Note on speculative execution
 
 RISC-V memory tagging is intended to provide probabilistic detection of
