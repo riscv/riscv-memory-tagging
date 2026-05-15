@@ -239,8 +239,8 @@ Some software environments, such as M-mode firmware or tightly controlled
 embedded systems, may not need to preserve compatibility with implementations
 where memory tagging is not implemented or not enabled. In such environments,
 a combined operation that constructs a tagged pointer and stores the
-corresponding tag to tag storage could reduce code size or improve performance
-for common cases such as small stack allocations.
+corresponding tag to tag storage may be desirable for common cases such as
+small stack allocations.
 
 This extension does not define separate non-Zimop encodings for such operations.
 An implementation can instead recognize common instruction sequences that
