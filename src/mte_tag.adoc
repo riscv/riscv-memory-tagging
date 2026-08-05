@@ -618,11 +618,11 @@ When the active `pointer_tag_width = 4`, bits `[127:16]` are ignored by
 ===== Accessibility of Zimt CSRs
 CSR access to `senvmtagexclude0`, `senvmtagexclude1`, `henvmtagexclude0`, and
 `henvmtagexclude1` from modes less privileged than M causes illegal instruction
-exception if Smstateen is implemented and `mstateen0.MTE=0`.
+exception if Smstateen is implemented and `mstateen0.MT=0`.
 
 CSR access to `senvmtagexclude0`, and `senvmtagexclude1` from VS mode causes
-virtual instruction exception if Ssstateen is implemented, `hstateen0.MTE=0`,
-and `mstateen0.MTE=1` or Smstateen is not implemented.
+virtual instruction exception if Ssstateen is implemented, `hstateen0.MT=0`,
+and `mstateen0.MT=1` or Smstateen is not implemented.
 
 ==== Machine Security Configuration Register(`mseccfg`)
 
