@@ -83,6 +83,22 @@ privileged CSRs.
 `Svatag` defines the `svittu`, `svitts`, `vsvittu`` and `vsvitts` CSRs while
 `Smvatag` defines `mvitt`.
 
+[[TAG_BASE_CSR_ACCESSIBILITY]]
+==== Accessibility of Svatag CSRs
+CSR access to `svittu`, `svitts`, `vsvitts`, and `vsvittu` from modes less
+privileged than M causes illegal instruction exception if Smstateen is
+implemented and `mstateen0.MT=0`.
+
+CSR access to `svitts` and `svittu` from VS mode causes virtual instruction
+exception if Ssstateen is implemented, `hstateen0.MT=0`, and `mstateen0.MT=1`
+or Smstateen is not implemented.
+
+NOTE: The CSR access from VS mode, if allowed, uses the state of `vsvitts` and
+`vsvittu` CSRs, respectively.
+
+WARNING: The position of the MT bit in `[mh]stateen` must be specified before
+ratification.
+
 [[TAG_MEM_PROTECTION]]
 === Protection of tag storage
 
