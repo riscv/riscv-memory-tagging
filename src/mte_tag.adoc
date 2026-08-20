@@ -16,8 +16,8 @@ environment.
 
 To maintain binary compatibility with implementations where memory tagging
 extension may not be implemented or may not be enabled for a workload,
-instruction encodings for memory tagging are taken from zimop cite:[ZIMOP]
-encoding and thus make memory tagging extension dependent on zimop.
+instruction encodings for memory tagging are taken from Zimop cite:[ZIMOP]
+encoding and thus make memory tagging extension dependent on Zimop.
 
 A memory tag (`mc_tag`) can be up to 8 bits wide. Thus, depending on memory
 chunk counts, a `load tag` or `store tag` (see taxonomy for loads and stores)
@@ -87,7 +87,7 @@ and perform arithmetics on `pointer_tag` in a tagged pointer. Placement and
 arithmetics on `pointer_tag` are performed in-place in masked bits (as defined
 by pointer masking extension) starting at b63. Instructions introduced to
 place and perform arithmetics on `pointer_tag` are encoded using `MOP.RR.1`
-from zimop extension.
+from Zimop extension.
 
 [NOTE]
 ====
@@ -107,7 +107,7 @@ of tag values permitted by the active tag generation exclusion mask, and places
 the result in `rd[XLEN:XLEN-pointer_tag_width+1]`.
 
 If memory tagging is disabled in the current execution environment (see
-<<MEM_TAG_EN>>), then `gentag` instruction falls back to zimop behavior and zeroes
+<<MEM_TAG_EN>>), then `gentag` instruction falls back to Zimop behavior and zeroes
 destination register.
 
 A tag value is permitted if the corresponding bit in the active tag generation
@@ -193,7 +193,7 @@ Zimt defines an instruction to store tag (i.e. `pointer_tag`) value(s) for
 consecutive 1 to 16 memory chunk(s). Base address of the first memory chunk is
 calculated by doing `rs1 & (~0xF)`. Count of memory chunk is encoded as 4 bit
 immediate (#chunk_count) in the instruction. This instruction is encoded using
-`MOP.RR.0` from zimop extension. Immediate encodings in #chunk_count are zero
+`MOP.RR.0` from Zimop extension. Immediate encodings in #chunk_count are zero
 based and thus #chunk_count = 0 means first chunk and #chunk_count = 15 means
 16th chunk.
 
@@ -214,7 +214,7 @@ by `chunk_count` starting with the first memory chunk calculated from virtual
 address specified in `rs1`.
 
 If memory tagging is disabled in the current execution environment (see
-<<MEM_TAG_EN>>), then `settag` instruction falls back to zimop behavior and
+<<MEM_TAG_EN>>), then `settag` instruction falls back to Zimop behavior and
 zeroes x0, which is a no-op.
 
 [wavedrom, ,svg]
@@ -334,9 +334,9 @@ subject to tag checks.
 =====
 
 ==== Explicit tag check
-Zimt defines an explicit tag check instruction taken from `MOP.RR.1` of zimop
+Zimt defines an explicit tag check instruction taken from `MOP.RR.1` of Zimop
 extension, `checktag rs1, #chunk_count`. If memory tagging is disabled in the
-execution environment then `checktag` instruction reverts to zimop behavior. If
+execution environment then `checktag` instruction reverts to Zimop behavior. If
 memory tagging is enabled in the execution environment then `checktag`
 instruction extracts `pointer_tag` from `rs1` and performs load tag operation
 for memory chunks (count = `#chunk_count`) starting at virtual address `rs1`.
