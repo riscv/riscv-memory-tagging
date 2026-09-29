@@ -26,8 +26,7 @@ ifndef::spec_short[:spec_short: riscv-mte]
 :experimental:
 :reproducible:
 :imagesoutdir: build/images
-:srcdir: src
-:bibtex-file: {srcdir}/mte.bib
+:bibtex-file: modules/ROOT/resources/mte.bib
 :bibtex-order: alphabetical
 :bibtex-style: apa
 :icons: font
@@ -79,11 +78,15 @@ https://creativecommons.org/licenses/by/4.0/.
 Copyright 2024 by RISC-V International.
 
 [preface]
-include::contributors.adoc[]
-include::mte_intro.adoc[]
-include::mte_tag.adoc[]
-include::mte_vatag.adoc[]
+include::../modules/ROOT/pages/contributors.adoc[]
+include::../modules/ROOT/pages/mte_intro.adoc[]
+include::../modules/ROOT/pages/mte_tag.adoc[]
+include::../modules/ROOT/pages/mte_vatag.adoc[]
 
-// The index must precede the bibliography
-include::index.adoc[]
-include::bibliography.adoc[]
+// The index must precede the bibliography. The index macro is PDF-only (Antora
+// does not generate a back-of-book index), so it lives here in the assembler
+// rather than in a page.
+[index]
+== Index
+
+include::../modules/ROOT/pages/bibliography.adoc[]
