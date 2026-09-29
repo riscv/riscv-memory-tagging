@@ -77,11 +77,16 @@ https://creativecommons.org/licenses/by/4.0/.
 
 Copyright 2024 by RISC-V International.
 
+// Chapter sources live under modules/ROOT/pages/ so they double as standalone
+// Antora pages (each with a level-0 title). leveloffset=+1 demotes those titles
+// by one level here, reproducing the PDF's chapter structure. This file is the
+// single PDF assembler; the pages are the single content source. See ANTORA.md
+// in riscv/docs-spec-template for the dual-build rationale.
 [preface]
-include::../modules/ROOT/pages/contributors.adoc[]
-include::../modules/ROOT/pages/mte_intro.adoc[]
-include::../modules/ROOT/pages/mte_tag.adoc[]
-include::../modules/ROOT/pages/mte_vatag.adoc[]
+include::../modules/ROOT/pages/contributors.adoc[leveloffset=+1]
+include::../modules/ROOT/pages/mte_intro.adoc[leveloffset=+1]
+include::../modules/ROOT/pages/mte_tag.adoc[leveloffset=+1]
+include::../modules/ROOT/pages/mte_vatag.adoc[leveloffset=+1]
 
 // The index must precede the bibliography. The index macro is PDF-only (Antora
 // does not generate a back-of-book index), so it lives here in the assembler
@@ -89,4 +94,4 @@ include::../modules/ROOT/pages/mte_vatag.adoc[]
 [index]
 == Index
 
-include::../modules/ROOT/pages/bibliography.adoc[]
+include::../modules/ROOT/pages/bibliography.adoc[leveloffset=+1]

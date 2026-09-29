@@ -1,5 +1,5 @@
 [[intro]]
-== Introduction
+= Introduction
 
 Significant production software is written in languages which provide
 powerful memory management primitives (like C/C++).
