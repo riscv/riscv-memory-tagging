@@ -1,5 +1,12 @@
 = RISC-V Memory Tagging
 
+This repository holds the RISC-V Memory Tagging specification: the Zimt memory tagging extension, and the Svatag and Smvatag extensions for virtually indexed tag storage.
+
+* **Read the current draft** on this repository's GitHub Pages site: https://riscv.github.io/riscv-memory-tagging/
+* **Released PDFs** are attached to the https://github.com/riscv/riscv-memory-tagging/releases[GitHub Releases].
+
+The repository follows https://github.com/riscv/docs-spec-template[docs-spec-template]. One set of AsciiDoc sources builds both the PDF, which is what goes to the Architecture Review Committee (ARC), and the HTML site. See link:ARC_SUBMISSION.md[ARC_SUBMISSION.md] for the ARC requirements and link:ANTORA.md[ANTORA.md] for how the two builds share the sources.
+
 == License
 
 This work is licensed under a Creative Commons Attribution 4.0 International License (CC-BY-4.0). For details, see the link:LICENSE[LICENSE] file.
@@ -10,7 +17,7 @@ The list of maintainers of this specification is maintained in the link:MAINTAIN
 
 == Contributors
 
-The list of contributors to this specification is maintained in the link:src/contributors.adoc[contributors] file.
+The list of contributors to this specification is maintained in the link:modules/ROOT/pages/contributors.adoc[contributors] file.
 
 For guidelines on how to contribute, refer to the link:CONTRIBUTING.md[CONTRIBUTING] file.
 
@@ -20,55 +27,99 @@ The governance for this project is defined in the link:GOVERNANCE.md[GOVERNANCE]
 
 Community information, including meeting (if held) and mailing lists are detailed in this file.
 
-== Building the Document
+== Repository layout
 
-=== Directory Structure
+* `modules/ROOT/pages/`: the specification text, one page per chapter. **This is where you write.**
+* `modules/ROOT/nav.adoc`: the site's table of contents. Add new chapters here as well as in the PDF assembler.
+* `modules/ROOT/resources/mte.bib`: the bibliography database.
+* `src/riscv-mte.adoc`: the PDF assembler. It holds the title, the prefaces and the PDF-only settings, and includes the chapter pages.
+* `antora.yml`: the site's component descriptor. Its `version:` and `page-*` values are stamped at release time; do not edit them by hand.
+* `scripts/`, `tests/`: versioning and publishing helpers, and their tests. `scripts/release-info.sh` derives the version and lifecycle phase from the git tags.
+* `docs-resources/`: shared RISC-V fonts, themes and images, as a git submodule.
+* `build/`: build output (not committed).
 
-The following directories are used to organize the contents of this repo:
+== Writing the specification
 
-* `dependencies/`: software dependencies needed to build the specification
-* `docs-resources/`: resources for all specifications sourced from link:.gitmodules[git submodule]
-* `src/`: source files for the specification
-* `build/`: default directory where the build artifacts are generated
+* **Linking to another chapter:** name that chapter's page, as in `<<mte_tag.adoc#TAG_CHECKS>>`. On the site each chapter is its own page, so a bare `<<TAG_CHECKS>>` only works within the same chapter. Leave the link text out; both builds generate it.
+* **Adding a chapter:** create the page in `modules/ROOT/pages/` starting with a level-0 title (`= Title`), add an `include::../modules/ROOT/pages/<page>.adoc[leveloffset=+1]` line to `src/riscv-mte.adoc`, and add an `xref:` entry to `modules/ROOT/nav.adoc`.
+* **PDF-only settings** (theme, fonts, title-page logo, the back-of-book index, the `docs-resources` include) belong in `src/riscv-mte.adoc`, never in a page.
 
-=== Prerequisites
-
-To build the document, you'll need the following tools installed on your system:
-
-* Make
-* asciiDoctor-pdf, asciidoctor-bibtex, asciidoctor-diagram, and asciidoctor-mathematical
-* Docker
-
-=== Cloning the Repository
+== Building the PDF
 
 ```shell
 git clone --recurse-submodules https://github.com/riscv/riscv-memory-tagging.git
+cd riscv-memory-tagging
+make build
 ```
 
-=== Building the Documentation
+The build runs in the `riscvintl/riscv-docs-base-container-image` container when Docker is available, and with locally installed tools (Make, asciidoctor-pdf, asciidoctor-bibtex, asciidoctor-diagram, asciidoctor-mathematical) otherwise.
 
-To start the build process, run:
+The PDF is written to `build/` under its ARC name, `riscv-mte-v<version>-<YYYYMMDD>.pdf`. The version comes from the latest release tag: a build from an untagged commit is named `riscv-mte-v<latest>-<sha>-<date>.pdf` and is a development build, not an ARC submission. To build a specific version, run for example `make VERSION=v0.8`.
+
+`make clean` removes the build output.
+
+== Previewing the HTML site
+
+Previewing needs Node.js 20 or later and Docker.
 
 ```shell
-cd ./docs-spec-template && make build
+npm ci                                     # Antora and its extensions
+docker compose up -d kroki                 # local diagram server for the WaveDrom figures
+npm run preview                            # site in build/site/
+NO_STAMP=1 ./scripts/build-pages-site.sh   # or: exactly what GitHub Pages publishes, in build/pages-site/
+docker compose down
 ```
 
-The link:Makefile[] script will check the availability of Docker on your system:
+Citations (`cite:[...]`) and chapter numbers do not render on the site until the specification is ratified and published on docs.riscv.org, which supplies those extensions. The PDF has both.
 
-* If Docker is available, the documentation will be built inside a Docker container using the image riscvintl/riscv-docs-base-container-image:latest. This ensures a consistent build environment across different systems.
-* If Docker is not available, the documentation will be built directly on your system using the installed tools.
+== Releases and lifecycle phases
 
-The documentation is generated from the AsciiDoctor source files in your project. The primary source file is specified by the `HEADER_SOURCE` variable in the Makefile.
+Versions are two-part `vMAJOR.MINOR` tags compared as decimals, so `v0.8` is later than `v0.61`. Each version maps to a lifecycle phase:
 
-The build process utilizes several options, including theming and font settings, and generates a PDF document as output.
+[cols="1,2"]
+|===
+| Versions | Phase
 
-=== Cleaning up
+| below `v0.6` | Draft and Development
+| `v0.6` – `v0.79` | Development Complete
+| `v0.8` – `v0.89` | Stabilized
+| `v0.9` – `v0.98` | Frozen
+| `v0.99` | Ratification-Ready
+| `v1.0` | Ratified
+|===
 
-To clean up the generated files, run:
+The phase appears on the PDF title page and in its *Document State* preface, and on the site's cover page.
 
-```shell
-make clean
-```
+**To cut a release**, run the *Version Bot* workflow (`.github/workflows/version-bot.yml`) against `main`:
+
+* Leave the inputs at their defaults for a routine revision (`+0.01`, for example `v0.51` → `v0.52`).
+* To reach a milestone (`v0.6`, `v0.8`, `v0.9`, `v0.99`, `v1.0`), pick it in `target_phase` or set `release_version`. The bot never steps onto a milestone by itself.
+
+The bot stamps `antora.yml`, tags the commit, builds the PDF, publishes a GitHub Release, and republishes the GitHub Pages site. Milestone versions are published as full releases and all others as pre-releases. When a release enters a new phase, the bot also opens a PR updating `SPEC_STATE.md`.
+
+[NOTE]
+====
+Releases before the migration used three-part tags (`v0.1.0` to `v0.5.0`), which the version tooling ignores, so it currently treats `v0.3` as the latest release. The first release after the migration must therefore be set explicitly with `release_version`, at `v0.51` or later, so it sorts above the published `v0.5.0`. Existing tags and releases are left as they are.
+====
+
+Pull requests and pushes to `main` build the PDF and HTML as workflow artifacts, but release nothing. Each push to `main` also republishes the site under `/riscv-mte/dev/`.
+
+== Repository settings
+
+A repository admin needs to set these once:
+
+. *Settings → Pages → Build and deployment → Source*: set it directly to *GitHub Actions*. Choosing *Deploy from a branch* first can leave a stray build that overwrites the site.
+. *Settings → Actions → General → Workflow permissions*: enable *Allow GitHub Actions to create and approve pull requests*, so the bots can open their PRs.
+. *Settings → Secrets and variables → Actions*: add a `GHTOKEN` secret (a fine-grained token with *Contents*, *Pull requests* and *Workflows* read/write on this repository). Without it, checks on bot-opened PRs wait for manual approval, and the weekly template sync cannot open its PR at all.
+
+== Template updates
+
+`.github/workflows/template-sync.yml` runs weekly and opens a PR that pulls newer template-owned files (workflows, scripts, the template's `*.md` guides) from docs-spec-template. `.template-version` records which template commit the repository is on. See link:UPGRADING.md[UPGRADING.md].
+
+[WARNING]
+====
+The template currently lists `GOVERNANCE.md` as template-owned, but this repository's copy is specific to the Memory Tagging task group. Until that is fixed in docs-spec-template, revert any change to `GOVERNANCE.md` in a template sync PR before merging it.
+====
 
 == Enabling pre-commit checks locally
 
