@@ -68,20 +68,14 @@ list-of::table[hide_empty_section=true, enhanced_rendering=true]
 == List of listings
 list-of::listing[hide_empty_section=true, enhanced_rendering=true]
 
-[preface]
-== Copyright and license information
-This specification is licensed under the Creative Commons
-Attribution 4.0 International License (CC-BY 4.0). The full
-license text is available at
-https://creativecommons.org/licenses/by/4.0/.
-
-Copyright 2024 by RISC-V International.
-
 // Chapter sources live under modules/ROOT/pages/ so they double as standalone
 // Antora pages (each with a level-0 title). leveloffset=+1 demotes those titles
 // by one level here, reproducing the PDF's chapter structure. This file is the
 // single PDF assembler; the pages are the single content source. See ANTORA.md
 // in riscv/docs-spec-template for the dual-build rationale.
+[preface]
+include::../modules/ROOT/pages/copyright.adoc[leveloffset=+1]
+
 [preface]
 include::../modules/ROOT/pages/contributors.adoc[leveloffset=+1]
 include::../modules/ROOT/pages/mte_intro.adoc[leveloffset=+1]
