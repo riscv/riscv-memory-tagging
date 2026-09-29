@@ -116,10 +116,7 @@ A repository admin needs to set these once:
 
 `.github/workflows/template-sync.yml` runs weekly and opens a PR that pulls newer template-owned files (workflows, scripts, the template's `*.md` guides) from docs-spec-template. `.template-version` records which template commit the repository is on. See link:UPGRADING.md[UPGRADING.md].
 
-[WARNING]
-====
-The template currently lists `GOVERNANCE.md` as template-owned, but this repository's copy is specific to the Memory Tagging task group. Until that is fixed in docs-spec-template, revert any change to `GOVERNANCE.md` in a template sync PR before merging it.
-====
+Template sync never overwrites this repository's own files, such as `GOVERNANCE.md`, `CONTRIBUTING.md` or the specification sources. When the template changes one of the files both share (for example the `Makefile` or this README), the sync PR lists it for a manual merge.
 
 == Enabling pre-commit checks locally
 
