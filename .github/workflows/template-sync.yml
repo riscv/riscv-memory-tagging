@@ -29,7 +29,7 @@ jobs:
     if: github.repository != 'riscv/docs-spec-template'
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           # See milestone-pr in version-bot.yml: create-pull-request adds its
@@ -56,7 +56,12 @@ jobs:
         run: |
           set -euo pipefail
           git remote add template https://github.com/riscv/docs-spec-template.git
-          git fetch template main
+          # Fully-qualified refspec, not the bare name "main": a tag of the
+          # same name anywhere in this repository would otherwise win the
+          # ambiguity, and `git fetch template main` would resolve to the tag
+          # and write only FETCH_HEAD -- leaving no refs/remotes/template/main
+          # for the next step's `git rev-parse template/main` to resolve.
+          git fetch template '+refs/heads/main:refs/remotes/template/main'
 
       - name: Determine baseline and target
         id: refs
@@ -112,10 +117,6 @@ jobs:
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
 
-      - name: Create branch
-        if: steps.refs.outputs.skip == 'false'
-        run: git switch -c "gitbot/template-sync-${{ steps.refs.outputs.short_target }}"
-
       # Template-owned files: no per-repository content, safe to overwrite.
       # Kept in sync by hand with the list in UPGRADING.md, "Template-owned".
       - name: Copy template-owned files
@@ -139,8 +140,8 @@ jobs:
             .github/workflows/pre-commit.yml \
             .github/workflows/vale-linting.yml \
             .github/workflows/template-sync.yml \
+            .github/workflows/repo-setup.yml \
             .github/dependabot.yml \
-            .pre-commit-config.yaml \
             docker-compose.yml \
             ANTORA.md \
             MIGRATION.md \
@@ -159,18 +160,40 @@ jobs:
           set -euo pipefail
           baseline="${{ steps.refs.outputs.baseline }}"
           target="${{ steps.refs.outputs.target }}"
+          bootstrap="${{ steps.refs.outputs.bootstrap }}"
+
+          # A bootstrap run has no real baseline -- the step above set it to
+          # target -- so diffing baseline..target compares a commit with
+          # itself, finds nothing, and the checklist below reports "no shared
+          # files changed" on precisely the run where the manual merge burden
+          # is largest. Diff this repository's own tree against the template
+          # instead, which is the question a first sync should answer: how far
+          # has this repo drifted from the template it was created from?
+          #
+          # HEAD is still the pre-sync commit here: the Create branch step
+          # only switched branches, and the copy step staged its files without
+          # committing, so this compares the repository as it stands today.
+          if [[ "$bootstrap" == "true" ]]; then
+            base="HEAD"
+            verb="differs from the template"
+            none="- No shared files differ from the template."
+          else
+            base="$baseline"
+            verb="changed upstream"
+            none="- No shared files changed upstream in this range."
+          fi
 
           {
             echo 'checklist<<EOF'
             changed=false
-            for f in Makefile antora.yml antora-playbook.yml package.json README.adoc .gitignore .gitmodules .vale.ini CONTRIBUTING.md GOVERNANCE.md src/; do
-              if ! git diff --quiet "$baseline" "$target" -- "$f" 2>/dev/null; then
-                echo "- [ ] \`$f\` changed upstream -- merge by hand per UPGRADING.md section 2.5/2.6"
+            for f in Makefile antora.yml antora-playbook.yml package.json README.adoc .gitignore .gitmodules .vale.ini .pre-commit-config.yaml CONTRIBUTING.md GOVERNANCE.md src/; do
+              if ! git diff --quiet "$base" "$target" -- "$f" 2>/dev/null; then
+                echo "- [ ] \`$f\` $verb -- merge by hand per UPGRADING.md section 2.5/2.6"
                 changed=true
               fi
             done
             if [[ "$changed" == "false" ]]; then
-              echo "- No shared files changed upstream in this range."
+              echo "$none"
             fi
             echo 'EOF'
           } >> "$GITHUB_OUTPUT"
@@ -191,10 +214,21 @@ jobs:
 
       - name: Create pull request
         if: steps.refs.outputs.skip == 'false'
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GHTOKEN || secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: sync template-owned files from docs-spec-template@${{ steps.refs.outputs.short_target }}'
+          # Same reason as milestone-pr in version-bot.yml: the DCO check that
+          # RISC-V spec repos run requires a Signed-off-by matching the
+          # commit's author. create-pull-request authors the commit as the user
+          # who triggered this workflow and adds no trailer of its own, so the
+          # sync PR is blocked until someone amends it. Sign off as that same
+          # user. (The action's own `signoff: true` is no use here -- it signs
+          # as the *committer*, which defaults to github-actions[bot] and so
+          # would not match the author.)
+          commit-message: |
+            chore: sync template-owned files from docs-spec-template@${{ steps.refs.outputs.short_target }}
+
+            Signed-off-by: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
           branch: gitbot/template-sync-${{ steps.refs.outputs.short_target }}
           delete-branch: true
           title: 'Template sync: pick up docs-spec-template changes (${{ steps.refs.outputs.short_target }})'

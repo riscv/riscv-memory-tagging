@@ -588,6 +588,15 @@ else depends on it.
       run that reported success. Re-run `publish-site.yml` to recover.
       Pages also needs a public repo unless your org is on Team/Enterprise; the
       job skips itself on private repos rather than failing your release.
+- [ ] Allow release tags to deploy to Pages. Enabling Pages creates the
+      `github-pages` environment restricted to `main`, so the first milestone
+      tag (`v0.6`, `v0.8`, …) fails at the deploy step with `Tag "v0.8" is not
+      allowed to deploy to github-pages due to environment protection rules`.
+      Add a tag rule for `v*` under *Settings → Environments → github-pages →
+      Deployment branches and tags*, or with an admin token:
+      ```bash
+      gh api -X POST repos/<org>/<repo>/environments/github-pages/deployment-branch-policies -f name='v*' -f type=tag
+      ```
 - [ ] Verify locally before pushing (needs Kroki, as in Step 10):
       ```bash
       NO_STAMP=1 ./scripts/build-pages-site.sh   # -> build/pages-site/
@@ -648,6 +657,57 @@ When you're ready to advance to the next milestone:
 - [ ] Reply on the ARC mailing list / Jira ticket that your repo is compliant
       with `ARC_SUBMISSION.md`, citing the URL of your first ARC-conformant
       release.
+
+## Step 16 — Adopt `template-sync.yml` (do not skip this)
+
+A repository created with *Use this template* gets `template-sync.yml` in the
+initial copy. A repository **migrated** by following this guide does not: every
+step above adds a specific file, and until you do this one, nothing in your
+repository knows the template exists. Fixes to the release flow, the Pages build
+or the ARC naming rules will land upstream and never reach you, and you will find
+out the way the first migrated specs did — by hitting a bug that was fixed months
+earlier.
+
+- [ ] Copy the workflow in:
+      ```bash
+      git checkout template/main -- .github/workflows/template-sync.yml
+      ```
+- [ ] Confirm a `GHTOKEN` secret is visible to the repository (organization
+      secrets count). The workflow writes files under `.github/workflows/`, which
+      `GITHUB_TOKEN` cannot push regardless of the *Allow GitHub Actions to
+      create and approve pull requests* setting.
+- [ ] Run it once from *Actions → Template Sync → Run workflow*, rather than
+      waiting for the Monday schedule.
+- [ ] While you are in *Actions*, run **Repository Setup** too. It applies the
+      repository settings this guide asks for by hand — the Pages source, the
+      `v*` tag rule, and Dependabot alerts and security updates — and reports
+      anything it could not apply. Those settings are invisible to a pull
+      request, so they are the easiest part of a migration to leave half-done.
+- [ ] Review the bootstrap PR. With no `.template-version` yet, the baseline is
+      `template/main`, so this first PR copies **every** template-owned file and
+      is larger than every later one. Expect it to add the template's reference
+      documents (`ANTORA.md`, `UPGRADING.md`, `ARC_SUBMISSION.md`,
+      `CODE_OF_CONDUCT.md`) if you never copied them; decide once whether you
+      want them in the repository, and drop them from the PR if not.
+
+### Keep template-owned files unmodified
+
+The upgrade path only works if the files the template owns still match the
+template. A local edit to one of them is not a one-time cost — it is a merge you
+redo on every sync, forever, and the sync will eventually lose it silently.
+
+- Need different behavior from a template-owned script or workflow? Open an issue
+  or a PR on the template. If it is right for your spec it is usually right for
+  the next one, and then it is maintained for you.
+- Need behavior that genuinely is yours alone? Put it in a file the template does
+  not own — a `Makefile.local`, a `repo: local` pre-commit hook, a workflow of
+  your own name — and leave the template's copy untouched. That is how
+  `riscv-high-assurance-cryptography` keeps its KAT workflow and its
+  cross-chapter link gate while taking `build-pdf.yml` and `version-bot.yml`
+  verbatim.
+- Not sure which side a file is on? [Which files are whose](UPGRADING.md#a-which-files-are-whose)
+  classifies every path, and `template-sync.yml` reports the shared ones on each
+  PR instead of touching them.
 
 ## Common gotchas
 
