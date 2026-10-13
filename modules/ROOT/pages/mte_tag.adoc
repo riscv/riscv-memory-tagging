@@ -1,10 +1,10 @@
 [[tagging]]
-== Memory tagging extension (Zimt)
+= Memory tagging extension (Zimt)
 
 The Zimt extension divides address space of the program in equal memory chunks
 of 16 bytes (hereafter `mc`). Each `mc` in address space can be associated with
 a tag (hereafter `mc_tag`) by software and `mc_tag` for `mc` is stored in
-memory defined by extension Svatag (see <<virtualtag>>).
+memory defined by extension Svatag (see <<mte_vatag.adoc#virtualtag>>).
 
 Software (runtime memory allocator or compiler) that constructs pointers to
 access memory (and thus memory chunks) is expected to place a tag (hereafter
@@ -32,27 +32,27 @@ follows the same rules for memory access. For further information, see section
 24.2.6 of the privilege specification: Memory Accesses Subject to Pointer
 Masking.
 
-=== Taxonomy for loads and stores
+== Taxonomy for loads and stores
 
 `Zimt` introduces new type of loads and stores to the hart and enforces tag
 checks on certain loads and stores. Following terminologies are defined for
 better clarity and will be used in the rest of the specification.
 
-==== Regular load and regular store operations
+=== Regular load and regular store operations
 Load and store operating on a page with permissions `--R`, `X-R`, `-WR` and
 `XWR` are termed as a `regular load` and `regular store`. Regular load and
 regular store memory operations are generated from an instruction (except
 `settag` and `checktag`) defined by ISA to perform memory accesses.
 
-==== Checked load and store
+=== Checked load and store
 Regular load and store which is subject to tag check is termed as checked load
 and store (or checked memory access)
 
-==== Unchecked load and store
+=== Unchecked load and store
 Regular load and store which is not subject to tag check is termed as unchecked
 load and store (unchecked memory access).
 
-==== Load tag and store tag operations
+=== Load tag and store tag operations
 `load tag` operation is a load of tag from tag storage as defined by Svatag or
 Smvatag extensions. `store tag` operation is a store of tag to tag storage as
 defined by Svatag or Smvatag extensions. `load tag` operation requires
@@ -63,7 +63,7 @@ Checked loads and stores shall generate load tag operation in order to fetch
 the tag for the memory chunk. `settag` instruction may generate a load tag
 followed by a store tag memory operation.
 
-=== Tag widths
+== Tag widths
 
 Width of the `pointer_tag` (hereafter `pointer_tag_width`) can be 4 bit or 7
 bit wide depending on implementation. Discovery of `pointer_tag_width` is
@@ -80,7 +80,7 @@ describes valid configurations of `pointer_tag_width` and `mc_tag_width`.
 |  7                | 8
 |===
 
-=== Tag placement in pointer
+== Tag placement in pointer
 
 Zimt defines following instructions to annotate a pointer with `pointer_tag`
 and perform arithmetics on `pointer_tag` in a tagged pointer. Placement and
@@ -99,7 +99,7 @@ contain the code size growth.
 
 Following are the instructions to place `pointer_tag` in the source register
 
-==== Generate a tag - gentag rd
+=== Generate a tag - gentag rd
 
 If memory tagging is enabled in the current execution environment (see
 <<MEM_TAG_EN>>), hart clears `rd`, generates a `pointer_tag` value from the set
@@ -133,7 +133,7 @@ distributed over the permitted tag values across invocations of `gentag`.
 See Appendix for example how this can be used by codegen.
 =====
 
-==== Arithmetics on pointer tag - addtag rd, rs1, #tag_imm4
+=== Arithmetics on pointer tag - addtag rd, rs1, #tag_imm4
 
 If memory tagging is enabled in the current execution environment (see
 <<MEM_TAG_EN>>), `addtag rd, rs1` instruction performs addition of
@@ -187,7 +187,7 @@ See Appendix for example how this can be used by codegen.
 =====
 
 [[TAG_STORE]]
-=== set tag(s) for memory chunk(s)
+== set tag(s) for memory chunk(s)
 
 Zimt defines an instruction to store tag (i.e. `pointer_tag`) value(s) for
 consecutive 1 to 16 memory chunk(s). Base address of the first memory chunk is
@@ -204,7 +204,7 @@ do so by creating an alternate read-only mapping of tag storage with the help
 of supervisor software.
 ====
 
-==== Store tag(s) for memory chunk(s): settag rs1, #chunk_count
+=== Store tag(s) for memory chunk(s): settag rs1, #chunk_count
 
 If memory tagging is enabled in the current execution environment (see
 <<MEM_TAG_EN>>), `settag` instruction creates a `mc_tag` =
@@ -252,7 +252,7 @@ supported by implementation and implementation may choose to split it
 into multiple stores which follows hart's memory consistency model. There are
 no ordering requirements or dependencies among splitted stores.
 
-===== Implementation optimizations
+==== Implementation optimizations
 
 Some software environments, such as M-mode firmware or tightly controlled
 embedded systems, may not need to preserve compatibility with implementations
@@ -267,7 +267,7 @@ construct a tagged pointer and then store the corresponding tag, and can fuse
 them internally using microarchitectural fusion, provided that the architectural
 behavior remains equivalent to executing the original instruction sequence.
 
-===== Memory ordering requirement
+==== Memory ordering requirement
 
 A regular memory access (regular load or regular store) to some virtual address
 `va` can not bypass the older store tag initiated by `settag rs1=va`.
@@ -278,7 +278,7 @@ it is software's responsibility to ensure that the tags are set according to
 software's need for respective virtual address prior to memory accesses via
 aliased virtual address.
 
-===== Exceptions
+==== Exceptions
 
 `settag` can raise store page fault or access fault depending on how tag
 storage is organized. If implementation doesn't support misaligned accesses,
@@ -287,7 +287,7 @@ locating tag is unaligned. Tag storage memory must be idempotent memory else
 `settag` raise store/AMO access-fault exception.
 
 [[TAG_CHECKS]]
-=== tag checks and privilege modes
+== tag checks and privilege modes
 
 If memory tagging is enabled for the execution environment, then memory tagging
 checks are performed by extracting `pointer_tag` from the input pointer and
@@ -296,11 +296,11 @@ respective address. If the effective address range of a load/store spans
 multiple memory chunks, the applicability of memory tag checks is determined
 separately for each memory chunk.
 
-==== M-mode
+=== M-mode
 If memory tagging is enabled in M-mode (see <<MEM_TAG_EN>>), all regular loads
 and regular stores are subject to memory tagging checks.
 
-==== Less than M-mode
+=== Less than M-mode
 If memory tagging is enabled in the current execution environment (see
 <<MEM_TAG_EN>>) and `satp.MODE == Bare`, then all regular loads and regular
 stores are subject to tag checks.
@@ -310,7 +310,7 @@ If memory tagging is enabled in the current execution environment and
 checks only if the data page is a tagged-data page and load/store instruction
 is not on a tagcheck-exempt code page (see <<TAGGED_PAGE>>).
 
-==== tag checks
+=== tag checks
 Once a regular load/store is determined (after paging bit checks and *envcfg
 control bit checks) to be subject to memory tagging checks, following further
 checks are performed
@@ -333,7 +333,7 @@ local to a function. These accesses are deemed to be safe and thus are not
 subject to tag checks.
 =====
 
-==== Explicit tag check
+=== Explicit tag check
 Zimt defines an explicit tag check instruction taken from `MOP.RR.1` of Zimop
 extension, `checktag rs1, #chunk_count`. If memory tagging is disabled in the
 execution environment then `checktag` instruction reverts to Zimop behavior. If
@@ -361,7 +361,7 @@ virtual address specified in `rs1`.
 ....
 
 [[TAGGED_PAGE]]
-=== Tag checks on page basis
+== Tag checks on page basis
 
 `Zimt` introduces `memory tag` (`MTAG`) bit in first stage page table which
 defines "tagged-data page" and "tagcheck-exempt code page".
@@ -399,14 +399,14 @@ following rules apply for checked memory accesses:
 If memory tagging is not enabled for the execution environment via *envcfg CSR,
 then `MTAG` bit in page table entry is ignored by hart.
 
-==== Tag checks on supervisor accesses to user pages
+=== Tag checks on supervisor accesses to user pages
 
 Supervisor accesses to user pages do not generate checked accesses and if
 memory tagging is enabled for user mode then MTAG bit in first stage page
 tables is ignored.
 
 [[HYPERVISOR_LDST]]
-=== Memory tagging and hypervisor memory accesses
+== Memory tagging and hypervisor memory accesses
 
 HLVX* instructions always generate unchecked loads.
 
@@ -432,7 +432,7 @@ If HLV*/HSV* instructions result in a tag mismatch, software check exception is
 delivered to HS mode with tval = 4 and hstatus.GVA set.
 
 [[MPRV_LDST]]
-=== Memory tagging on loads/stores affected by Modify Privilege bit (MPRV)
+== Memory tagging on loads/stores affected by Modify Privilege bit (MPRV)
 
 If MPRV=1 and `mstatus.MTAG_I` is set, then load and store instructions
 generate unchecked accesses. If MPRV=1 and `mstatus.MTAG_I` is clear, then
@@ -449,7 +449,7 @@ In case of a tag mismatch, software check exception is delivered to M mode with
 tval = 4.
 
 [[MEMTAG_CSR_CTRL]]
-=== CSR bits for memory tagging
+== CSR bits for memory tagging
 
 In M-mode, enable for memory tagging is controlled via `mseccfg` CSR.
 
@@ -459,7 +459,7 @@ CSR which controls enabling of memory tagging and `pointer_tag_width` for the
 next privilege mode.
 
 [[MEM_TAG_EN]]
-==== Memory tagging enable and pointer_tag_width
+=== Memory tagging enable and pointer_tag_width
 
 The term `xMT_MODE` for effective privilege is used to determine if memory
 tagging is enabled on memory accesses. In some cases like hypervisor load and
@@ -502,7 +502,7 @@ If memory tagging is implemented, implementation must implement
 `__x__envcfg` CSR and read it back. If read back value is `0b11` then
 implementation supports both `pointer_tag` widths.
 
-==== Tag generation exclusion mask
+=== Tag generation exclusion mask
 
 The active tag generation exclusion mask controls which `pointer_tag` values may
 be generated by `gentag`. The mask is 128 bits wide. Bit `i` corresponds to
@@ -569,7 +569,7 @@ should exclude from `gentag` any base tag `b` for which
 | `senvmtagexclude1:senvmtagexclude0`
 |===
 
-==== Tag generation exclusion mask CSRs
+=== Tag generation exclusion mask CSRs
 
 CSR addresses for these registers are to be allocated.
 
@@ -615,7 +615,7 @@ When the active `pointer_tag_width = 4`, bits `[127:16]` are ignored by
 |===
 
 [[TAG_EXCLUSION_CSR_ACCESSIBILITY]]
-===== Accessibility of Zimt CSRs
+==== Accessibility of Zimt CSRs
 CSR access to `senvmtagexclude0`, `senvmtagexclude1`, `henvmtagexclude0`, and
 `henvmtagexclude1` from modes less privileged than M causes illegal instruction
 exception if Smstateen is implemented and `mstateen0.MT=0`.
@@ -624,7 +624,7 @@ CSR access to `senvmtagexclude0`, and `senvmtagexclude1` from VS mode causes
 virtual instruction exception if Ssstateen is implemented, `hstateen0.MT=0`,
 and `mstateen0.MT=1` or Smstateen is not implemented.
 
-==== Machine Security Configuration Register(`mseccfg`)
+=== Machine Security Configuration Register(`mseccfg`)
 
 .Machine security configuration register(`mseccfg`)
 [wavedrom, ,svg]
@@ -652,7 +652,7 @@ When `MT_MODE` is `0b00`, the following rules apply to M-mode:
 
 * Zimt instructions will revert to their behavior as defined by Zimop.
 
-==== Machine Environment Configuration Register (`menvcfg`)
+=== Machine Environment Configuration Register (`menvcfg`)
 
 .Machine environment configuration register (`menvcfg`)
 [wavedrom, ,svg]
@@ -683,7 +683,7 @@ When `MT_MODE` is `0b00`, the following rules apply to HS/S-mode:
 
 * Zimt instructions will revert to their behavior as defined by Zimop.
 
-==== Supervisor Environment Configuration Register (`senvcfg`)
+=== Supervisor Environment Configuration Register (`senvcfg`)
 
 .Supervisor environment configuration register (`senvcfg`)
 [wavedrom, ,svg]
@@ -710,7 +710,7 @@ When `MT_MODE` is `0b00`, the following rules apply to VU/U-mode:
 
 * Zimt instructions will revert to their behavior as defined by Zimop.
 
-==== Hypervisor Environment Configuration Register (`henvcfg`)
+=== Hypervisor Environment Configuration Register (`henvcfg`)
 
 .Hypervisor environment configuration register (`henvcfg`)
 [wavedrom, ,svg]
@@ -741,7 +741,7 @@ When `MT_MODE` is `0b00`, the following rules apply to VS-mode:
 
 * Zimt instructions will revert to their behavior as defined by Zimop.
 
-==== Machine Status Register (`mstatus`)
+=== Machine Status Register (`mstatus`)
 
 .Machine-mode status register (`mstatus`) for RV64
 [wavedrom, ,svg]
@@ -787,7 +787,7 @@ The Zimt extension adds `MTAG_I` bit to `mstatus`. When a trap is taken to
 M-mode and `mtinst` is written with nonzero value, then MTAG bit for code page
 of trapping instruction is deposited in `mstatus.MTAG_I`.
 
-==== Hypervisor Status Register (`hstatus`)
+=== Hypervisor Status Register (`hstatus`)
 
 .Hypervisor status register (`hstatus`)
 [wavedrom, ,svg]
@@ -824,8 +824,8 @@ for trapping instruction is deposited in `hstatus.MTAG_I`.
 
 <<<
 
-=== Appendix
-==== Example: stack tagging codegen
+== Appendix
+=== Example: stack tagging codegen
 [listing]
 -----
     function:
@@ -851,7 +851,7 @@ for trapping instruction is deposited in `hstatus.MTAG_I`.
         settag s2, 1
 -----
 
-==== Example: optimized stack tagging codegen
+=== Example: optimized stack tagging codegen
 
 Software that targets implementations which support Zimt can
 optimize the stack codegen to skip `or` when constructing pointers to

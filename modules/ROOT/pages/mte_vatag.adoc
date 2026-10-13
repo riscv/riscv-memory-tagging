@@ -1,18 +1,18 @@
 [[virtualtag]]
-== Virtually indexed tag storage (Svatag and Smvatag)
+= Virtually indexed tag storage (Svatag and Smvatag)
 
 Svatag (for S/HS/VS/U/VU) and Smvatag (for M) extensions defines that tag
 storage and tag lookups for memory chunks (`mc`) as defined by Zimt (see
-<<tagging>>) extension is in virtual address space of execution environment.
+<<mte_tag.adoc#tagging>>) extension is in virtual address space of execution environment.
 Tag storage can be viewed as a large array (hereafter referred to as
 virtually indexed tag table or VITT) of the tags (`mc_tag`) with each tag
-width = `mc_tag_width` (see <<tagging>> for `mc_tag` and `mc_tag_width`).
+width = `mc_tag_width` (see <<mte_tag.adoc#tagging>> for `mc_tag` and `mc_tag_width`).
 Base virtual address of this large array is determined differently depending
 on privilege mode (see <<VIRT_TAG_BASE_CSR>>) and hereafter referred as
 `__x__VITT_BASE`.
 
 [[VIRT_TAG_LOOKUP]]
-=== Tag look up in virtually indexed tag table
+== Tag look up in virtually indexed tag table
 
 Virtual address location (`mc_tag_va`) of `mc_tag` for a given memory chunk
 located at virtual address `va` is looked up in VITT using the following
@@ -30,7 +30,7 @@ formula
 |===
 
 When a regular load/store is performed on a virtual address `va` with tag
-checks (see <<TAG_CHECKS>>) enforced then hart performs tag look up by
+checks (see <<mte_tag.adoc#TAG_CHECKS>>) enforced then hart performs tag look up by
 performing a load tag operation on `mc_tag_va` for the corresponding `va` and
 extracts `mc_tag` from the loaded value at the virtual address `mc_tag_va`.
 
@@ -46,7 +46,7 @@ requires masking and shifting of bits after the value is loaded from
 ====
 
 When `settag` instruction is executed for memory chunks(s) starting at the
-virtual address `va` (see <<TAG_STORE>>) and memory tagging is enabled for
+virtual address `va` (see <<mte_tag.adoc#TAG_STORE>>) and memory tagging is enabled for
 current execution environment, then hart performs tag store by performing
 a store on `mc_tag_va` for the corresponding `va`.
 
@@ -62,7 +62,7 @@ requires read, modify (masking and shifting of bits) and store back to
 ====
 
 [[VIRT_TAG_BASE_CSR]]
-=== Tag table base address CSRs
+== Tag table base address CSRs
 
 Tag storage base virtual address (`__x__VITT_BASE`) is defined using privileged
 CSRs. Tag table base address must be 4K aligned. Following table list the
@@ -84,7 +84,7 @@ privileged CSRs.
 `Smvatag` defines `mvitt`.
 
 [[TAG_BASE_CSR_ACCESSIBILITY]]
-==== Accessibility of Svatag CSRs
+=== Accessibility of Svatag CSRs
 CSR access to `svittu`, `svitts`, `vsvitts`, and `vsvittu` from modes less
 privileged than M causes illegal instruction exception if Smstateen is
 implemented and `mstateen0.MT=0`.
@@ -100,7 +100,7 @@ WARNING: The position of the MT bit in `[mh]stateen` must be specified before
 ratification.
 
 [[TAG_MEM_PROTECTION]]
-=== Protection of tag storage
+== Protection of tag storage
 
 Hart must raise access faults on regular loads and stores to virtual addresses
 spanning VITT range. Hart must also raise access fault on `settag` instruction
@@ -135,7 +135,7 @@ from minimum negative value to maximum negative value.
 HLV* and HSV* instructions use `vsvittu` or `vsvitts` as base of the tag table
 depending on if `hstatus.SPVP=0` or `hstatus.SPVP=1`, respectively.
 
-=== Note on speculative execution
+== Note on speculative execution
 
 RISC-V memory tagging is intended to provide probabilistic detection of
 memory-safety errors through tag checks on memory accesses. It does not assume
