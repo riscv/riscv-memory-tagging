@@ -108,9 +108,13 @@ Pull requests and pushes to `main` build the PDF and HTML as workflow artifacts,
 
 A repository admin needs to set these once:
 
-. *Settings → Pages → Build and deployment → Source*: set it directly to *GitHub Actions*. Choosing *Deploy from a branch* first can leave a stray build that overwrites the site.
+. *Settings → Secrets and variables → Actions*: make a `GHTOKEN` secret available to the repository (an organization secret counts). Without it, checks on bot-opened PRs wait for manual approval, the weekly template sync cannot open its PR at all, and the *Repository Setup* workflow below cannot change any setting. For template sync it needs *Contents*, *Pull requests* and *Workflows* read/write on this repository; for *Repository Setup* it also needs admin rights (*Administration* write).
 . *Settings → Actions → General → Workflow permissions*: enable *Allow GitHub Actions to create and approve pull requests*, so the bots can open their PRs.
-. *Settings → Secrets and variables → Actions*: add a `GHTOKEN` secret (a fine-grained token with *Contents*, *Pull requests* and *Workflows* read/write on this repository). Without it, checks on bot-opened PRs wait for manual approval, and the weekly template sync cannot open its PR at all.
+. *Settings → Pages → Build and deployment → Source*: set it directly to *GitHub Actions*. Choosing *Deploy from a branch* first can leave a stray build that overwrites the site.
+. *Settings → Environments → github-pages → Deployment branches and tags*: add a *Tag* rule for `v*`. Enabling Pages restricts the `github-pages` environment to `main`, so without this rule a release tag fails at the Pages deploy step.
+. *Settings → Advanced Security → Dependabot*: enable *Dependabot security updates*, so published advisories against the site preview tooling get a PR.
+
+Steps 3–5 can be applied in one go by running the *Repository Setup* workflow (*Actions → Repository Setup → Run workflow*). It reads each setting first, applies what is missing, and reports anything it could not apply, so it is safe to re-run as an audit.
 
 == Template updates
 
