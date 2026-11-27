@@ -52,7 +52,7 @@ cd riscv-memory-tagging
 make build
 ```
 
-The build runs in the `riscvintl/riscv-docs-base-container-image` container when Docker is available, and with locally installed tools (Make, asciidoctor-pdf, asciidoctor-bibtex, asciidoctor-diagram, asciidoctor-mathematical) otherwise.
+The build runs in the `ghcr.io/riscv/riscv-docs-base-container-image` container when Docker is available, and with locally installed tools (Make, asciidoctor-pdf, asciidoctor-bibtex, asciidoctor-diagram, asciidoctor-mathematical) otherwise.
 
 The PDF is written to `build/` under its ARC name, `riscv-mte-v<version>-<YYYYMMDD>.pdf`. The version comes from the latest release tag: a build from an untagged commit is named `riscv-mte-v<latest>-<sha>-<date>.pdf` and is a development build, not an ARC submission. To build a specific version, run for example `make VERSION=v0.8`.
 
